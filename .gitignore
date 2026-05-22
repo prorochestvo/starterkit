@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Flutter / Dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+**/build/
+**/pubspec.lock
+**/ios/Pods/
+**/ios/.symlinks/
+**/android/.gradle/
+**/android/local.properties
+
+# Go
+**/bin/
+**/vendor/
+*.exe
+*.test
+*.out
+coverage.out
+
+# Scala / sbt
+**/target/
+**/project/target/
+**/project/project/
+**/.bsp/
+**/.metals/
+**/.bloop/
+**/.scala-build/
+
+# Logs
+*.log
