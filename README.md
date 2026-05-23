@@ -9,9 +9,9 @@ slash commands, and a planning workflow.
 
 | Directory | Stack | Reviewer pipeline |
 |-----------|-------|-------------------|
-| [`flutter/`](./flutter) | Flutter / Dart | single reviewer |
-| [`golang/`](./golang) | Go | 5-reviewer fan-out |
-| [`scala/`](./scala) | Scala (ZIO) | single reviewer |
+| [`flutter/`](./flutter) | Flutter / Dart | 3-reviewer fan-out |
+| [`golang/`](./golang) | Go | 3-reviewer fan-out |
+| [`scala/`](./scala) | Scala (ZIO) | 3-reviewer fan-out |
 
 Each starter is independent — pick the one matching your stack and ignore the rest.
 

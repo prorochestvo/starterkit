@@ -5,12 +5,13 @@ box. Drop the template into a fresh Go project, fill in the `<...>` placeholders
 `CLAUDE.md`, and you get:
 
 - A `CLAUDE.md` documenting architecture, error handling (`PublicError` pattern),
-  forbidden imports / constructs, planning workflow, and the Go-specific
-  **5-reviewer fan-out** agent pipeline.
+  forbidden imports / constructs, planning workflow, and the standard
+  **3-reviewer fan-out** agent pipeline (lenses A/B/C: correctness & tests,
+  security & ops, performance & architecture).
 - Four ready-to-use subagents in `.claude/agents/`:
   - `gocode-architect` — planning and decomposition
   - `gocode-engineer` — implementation
-  - `gocode-reviewer` — review and verdicts (runs 5× in parallel with distinct lenses)
+  - `gocode-reviewer` — review and verdicts (runs 3× in parallel with distinct lenses)
   - `gocode-testdoctor` — failing-test triage
 - A `.claude/settings.json` with a sensible default permission allowlist for Go
   (`go test`, `go build`, `go vet`, `make test`, `gofmt`, `golangci-lint`, common
@@ -63,10 +64,10 @@ routes, database engine, key dependencies, env vars, deployment).
   service binaries verify schema is current at startup and `log.Fatalf` if not.
 - **Build outputs in `./build/`, scratch in `./tmp/`, logs in `./logs/`.** Only
   these three directories are gitignored at repo root — keep stray binaries out.
-- **5-reviewer fan-out.** The reviewer stage launches five `gocode-reviewer` agents
-  in parallel, one per lens (correctness, tests, ops, security, perf/architecture).
-  The orchestrator synthesises the reports into a single punch list. See
-  `CLAUDE.md` → **Agent Pipeline**.
+- **3-reviewer fan-out.** The reviewer stage launches three `gocode-reviewer` agents
+  in parallel, one per lens (A: correctness & tests, B: security & ops, C: performance
+  & architecture). The orchestrator synthesises the reports into a single punch list.
+  See `CLAUDE.md` → **Agent Pipeline**.
 
 ## Agent memory
 

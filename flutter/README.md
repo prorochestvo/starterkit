@@ -10,8 +10,13 @@ in `CLAUDE.md`, and you get:
 - Four ready-to-use subagents in `.claude/agents/`:
   - `flutter-architect` — planning and decomposition
   - `flutter-engineer` — implementation
-  - `flutter-reviewer` — review and verdicts
+  - `flutter-reviewer` — review and verdicts (runs 3× in parallel with distinct lenses)
   - `flutter-testdoctor` — failing-test triage
+
+  The reviewer stage is a standard **3-reviewer fan-out** with lenses A (correctness
+  & tests), B (security & ops), and C (performance & architecture). The orchestrator
+  synthesises the three reports into a single punch list. See `CLAUDE.md` →
+  **Agent Pipeline**.
 - A `.claude/settings.json` with a sensible default permission allowlist for Flutter
   (`flutter test`, `flutter analyze`, `dart format`, common git, etc.) and a strict
   deny list (`.env`, `.idea`, destructive ops).

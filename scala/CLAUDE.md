@@ -365,8 +365,10 @@ Every plan file follows this structure:
 
 ## Agent Pipeline
 
-All non-trivial tasks follow a three-stage pipeline using specialized agents. A fourth
-agent (`scala-testdoctor`) is invoked on-demand whenever tests fail, at any stage.
+All non-trivial tasks follow a three-stage pipeline using specialized agents. The
+review stage fans out to **three `scala-reviewer` instances running in parallel**,
+each with a distinct lens. A separate `scala-testdoctor` agent is invoked on-demand
+whenever tests fail, at any stage.
 
 ```
 User describes task
@@ -377,12 +379,30 @@ User describes task
 2. scala-engineer
     → Implements the tasks defined in the plan
     ↓
-3. scala-reviewer
-    → Reviews the implementation
+3. scala-reviewer × 3 (run in parallel — single message, three tool calls)
+    Lens A: correctness & tests — bugs, exhaustivity, error-channel
+            discipline (typed E vs defects), fiber/resource leaks,
+            edge cases, test coverage, test structure (one suite per
+            unit), scenario completeness, deterministic time/random
+    Lens B: security & operations — input validation, auth boundaries,
+            secrets handling, injection (SQL, command), observability
+            (logs, metrics, traces), log volume, operator/runbook UX
+    Lens C: performance & architecture — allocations, blocking calls,
+            fiber/Stream backpressure, layer boundaries, dependency
+            direction, public service-trait contracts (breaking changes
+            to R/E/A), interface scope, ZLayer composition discipline
     ↓
-  ❌ Problems?       → Back to scala-engineer with specific findings
-  ⚠️  Tests failing? → scala-testdoctor diagnoses and patches, then rerun reviewer
-  ✅ Approved?       → mv plans/NNN-slug.md plans/completed/YYMMDD.NNNN.slug.md
+   Orchestrator synthesises all three reports, deduplicates findings,
+   resolves conflicts (e.g. one reviewer flags as Blocker what another
+   accepts as a trade-off), and presents the merged punch list to the user.
+    ↓
+  ❌ Blocker/Major found?  → Back to scala-engineer with the consolidated findings.
+                             After fix, run ONE targeted reviewer pass on the changed
+                             lines (not all 3 again) before re-approval.
+  ⚠️  Tests failing?        → scala-testdoctor diagnoses and patches, then rerun the
+                             targeted reviewer pass.
+  ✅ All three approve?     → Orchestrator moves the plan: mv plans/NNN-slug.md
+                             plans/completed/YYMMDD.NNNN.slug.md
 ```
 
 ### Agent responsibilities
@@ -391,20 +411,25 @@ User describes task
 |-------|------|--------|
 | `scala-architect` | Planning, decomposition, trade-offs | New plan file in `plans/` |
 | `scala-engineer` | Implementation, tests for new code | Code + tests in the repo |
-| `scala-reviewer` | Verdicts, severity-ranked findings, patches | Review report; moves plan to `completed/` on approval |
+| `scala-reviewer` (×3, parallel) | Lens-specific verdicts, severity-ranked findings, patch sketches | Three independent review reports |
 | `scala-testdoctor` | Triage of failing tests, minimal patches | Code/test fixes, re-run of `sbt test` |
+
+The orchestrating agent (the main Claude session driving the pipeline) owns
+synthesis: merging the three reports, resolving conflicting verdicts, deciding
+which findings to act on, and moving the plan to `completed/` once everyone
+signs off.
+
+Severity scale used by reviewers: **Blocker / Major / Minor / Nit**.
 
 ### Rules
 
-- **No skipping stages.** Every task starts with the architect and ends with reviewer
-  approval.
-- **Plan file first.** The architect MUST produce a plan file before any code is
-  written. If a plan already exists for the task, update it rather than creating a
-  new one.
-- **Review loop.** Engineer ↔ Reviewer cycle repeats until the reviewer approves.
-- **Reviewer gates completion.** Only the reviewer moves the plan to `plans/completed/`
-  with the `YYMMDD.NNNN.slug.md` rename.
-- **`sbt compile` and `sbt test` (and `sbt scalafmtCheckAll`) must pass** before the
-  reviewer gives approval. If tests fail, hand the logs to `scala-testdoctor`.
-- **Testdoctor is scoped.** It patches tests or the minimal production code needed to
-  make the failure go away. It does not redesign or refactor.
+- **No skipping stages.** Every task starts with the architect and ends with the three-reviewer fan-out.
+- **Plan file first.** The architect MUST produce a plan file before any code is written. If a plan already exists for the task, update it rather than creating a new one.
+- **Three reviewers, three lenses, one message.** All three `scala-reviewer` agents are launched in a single tool-call batch (multiple `Agent` blocks in one message) so they run in parallel. Each prompt names the lens explicitly and tells the agent what to SKIP (the other lenses) to avoid duplicated work.
+- **No solo reviewer pass on first review.** Even for small changes the full three-lens fan-out is required, because the lenses catch genuinely different classes of issue (Lens A won't see ops/log-volume problems; Lens C won't see test gaps). Skipping lenses is what the orchestrator does AFTER a Blocker/Major fix, not BEFORE the first verdict.
+- **Lens prompts are self-contained.** Each reviewer's prompt must include: (1) the lens name, (2) what to focus on, (3) what to SKIP (so it doesn't restate other lenses), (4) the file list, (5) the deliverable shape (Blocker / Major / Minor / Nit with `file:line` + patch sketch), (6) the word cap (typically 600 words).
+- **Re-review after fixes is single-pass.** Once an engineer addresses Blocker/Major findings, the orchestrator runs ONE reviewer pass scoped to the changed lines, not the full fan-out. Re-running all three each iteration is expensive and rediscovers nothing.
+- **Conflict resolution is explicit.** When reviewers disagree (one says Blocker, another says trade-off), the orchestrator chooses, names the rejected suggestion, and explains the reasoning to the user before moving on. The user has final say.
+- **Orchestrator gates completion.** The plan moves to `plans/completed/` only after every reviewer's Blocker and Major findings are addressed (either fixed, or explicitly accepted with rationale). The rename uses the standard `YYMMDD.NNNN.slug.md` format.
+- **`sbt scalafmtCheckAll`, `sbt compile`, and `sbt test` must pass** before review begins. If anything fails, hand the logs to `scala-testdoctor` first — reviewers should not waste time on a red tree.
+- **Testdoctor is scoped.** It patches tests or the minimal production code needed to make the failure go away. It does not redesign or refactor.
