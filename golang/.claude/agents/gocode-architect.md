@@ -77,6 +77,11 @@ Idiomatic Go, explicit error handling, minimal viable solution, no speculative a
 - Never produce a task without acceptance criteria.
 - Always reference actual file paths and function names from the codebase when possible.
 - Always consider backward compatibility and migration safety.
+- Honor `CLAUDE.md` → **Code Organization Principles** when deciding where new code lives:
+  place code by actual consumption (single consumer → next to it under `cmd/<binary>/`,
+  multiple → `internal/`; `internal/` over `pkg/` absent a real external importer); do
+  **not** plan a shared `bootstrap`/`startup`/`wiring` layer across binaries — inline
+  startup per entry point; split business logic by concern, not by launcher or deployment.
 
 ---
 

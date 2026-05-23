@@ -50,9 +50,8 @@ common layered Go layout — keep, edit, or remove rows as needed.
 
 | Layer | Location | Role |
 |-------|----------|------|
-| Entry point | `cmd/<binary>/` | Composition root, server bootstrap |
-| Bootstrap | `internal/bootstrap/` | Shared startup wiring (logger, DB gate, repository bundle) — used only by `cmd/*` |
-| Application | `internal/application/service/` | Business logic orchestration |
+| Entry point | `cmd/<binary>/` | Composition root + startup wiring (logger, DB gate, repository bundle), **inlined per binary** — no shared `bootstrap` package (see Code Organization Principles) |
+| Service | `internal/service/` | Business logic orchestration |
 | Domain | `internal/domain/` | Value objects / models, no logic |
 | Gateway | `internal/gateway/` | Routers, controllers, middleware |
 | Repository | `internal/repository/` | Persistence queries |
@@ -158,6 +157,58 @@ Describe any embedded or served frontend assets and their location.
 ### Deployment
 
 Describe how the service is deployed (systemd unit, Docker, k8s, etc.).
+
+## Code Organization Principles
+
+These rules govern *where code lives*. Apply them by default; treat a violation as
+something to flag, not silently accept.
+
+### Package placement follows consumption, not aspiration
+
+- Code shared by **multiple** binaries/entry points belongs in the shared tree
+  (`internal/`).
+- Code with **exactly one** consumer belongs **next to that consumer**
+  (`cmd/<binary>/`), not in the shared tree.
+- Prefer the private location (`internal/`) over a public one (`pkg/`) unless there
+  is a **real external (out-of-module) consumer**. Don't promise a public API
+  surface the project doesn't actually provide.
+- **Why:** the shared tree is for the genuinely shared layers of one app. Putting
+  single-consumer code (or a separate app) there bloats it and implies a contract
+  that doesn't exist; a `pkg/` package nobody outside the module imports is dead
+  weight. Before placing or keeping a package in the shared or public tree, check
+  who actually imports it — one consumer means co-locate, no external module means
+  keep it private. Never keep something in the shared tree just because it's
+  "reusable in principle"; treat such a move as its own deliberate refactor.
+
+### Deduplication is not a goal in itself
+
+- Distinguish **coincidental similarity** (looks alike today but must be free to
+  diverge) from a **genuine cross-cutting invariant**. Coincidental similarity →
+  duplicate the few trivial lines and let each site evolve. A true invariant →
+  centralize it once, where it belongs.
+- Do **not** build a shared `bootstrap` / `startup` / `wiring` layer for multiple
+  binaries just because their startup looks similar — inline it per entry point
+  (`cmd/<binary>/main.go`) so each stays free to diverge (different DBs,
+  dependencies, config).
+- Before extracting a helper, check whether the only thing being shared is already
+  captured elsewhere (e.g. already a one-line call) — if so, don't wrap it. An
+  abstraction can re-introduce the very complexity it pretends to hide (e.g. a
+  returning constructor needs error-cleanup that an inline fatal-and-exit path
+  simply doesn't).
+- **Why:** premature extraction imposes a contract where code should diverge. Dedup
+  earns its place only when it names a non-obvious invariant, removes a real
+  divergence risk, or cuts genuine cognitive load — not because two snippets look
+  alike.
+
+### Business logic is organized by concern, not by launcher
+
+- Business-logic packages are judged by being **simple and isolated**, regardless of
+  which binary runs them or how they are launched ("how it starts is not the
+  package's concern"). Keep a flat, per-concern split.
+- Do **not** reorganize business logic by runtime-vs-operator, by deployment, or by
+  consuming binary.
+- **Why:** grouping by launcher couples organization to deployment, which changes;
+  cohesion by concern is stabler. Isolation + simplicity is the real quality bar.
 
 ## Error Handling
 

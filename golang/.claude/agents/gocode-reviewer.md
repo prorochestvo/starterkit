@@ -18,7 +18,12 @@ You are normally invoked as one of three parallel reviewers, each with a distinc
 
 - **Lens A — correctness & tests**: bugs, races, edge cases, error paths, `context.Context` propagation, resource cleanup (`defer`, `Close`), `errors.Is`/`%w` discipline, test coverage, test structure (one `Test*` per method with subtests), scenario completeness, fixtures. *Skip*: security/ops and performance/architecture.
 - **Lens B — security & operations**: input validation, auth boundaries, secrets handling, injection (SQL, command, template), observability (logs, metrics, traces), log volume, operator/runbook UX. *Skip*: correctness/tests and performance/architecture.
-- **Lens C — performance & architecture**: allocations, blocking I/O on hot paths, goroutine/resource leaks, layer boundaries, dependency direction, API contracts (breaking changes, exported surface stability), interface scope, future-proofing. *Skip*: correctness/tests and security/ops.
+- **Lens C — performance & architecture**: allocations, blocking I/O on hot paths, goroutine/resource leaks, layer boundaries, dependency direction, **code organization** (see below), API contracts (breaking changes, exported surface stability), interface scope, future-proofing. *Skip*: correctness/tests and security/ops.
+
+  Code-organization checks (from `CLAUDE.md` → **Code Organization Principles**):
+  - **Placement by consumption** — single-consumer code parked in the shared tree (`internal/`) instead of next to its only consumer (`cmd/<binary>/`); a `pkg/` package with no external (out-of-module) importer; anything kept in the shared/public tree merely because it's "reusable in principle".
+  - **Premature deduplication** — a shared `bootstrap`/`startup`/`wiring` layer across binaries, or any abstraction extracted over coincidental similarity rather than a genuine cross-cutting invariant. Flag the abstraction, not the duplication.
+  - **Business logic grouped by launcher** — packages reorganized by runtime-vs-operator, deployment, or consuming binary instead of by concern.
 
 If no lens is named you are in **solo mode** (typically a re-review pass after a P0/P1 fix). In solo mode use the full scope below.
 
@@ -36,6 +41,8 @@ If no lens is named you are in **solo mode** (typically a re-review pass after a
 **Code quality**: idiomatic Go, `%w` error wrapping, meaningful names, correct `context.Context` propagation, proper resource cleanup (`defer`, close patterns), no naked returns in complex functions, no unused params / dead code.
 
 **Architecture violations**: layer boundary violations (e.g., lower layer doing upper layer's work), leaking infrastructure concerns into domain, handlers containing business logic. Specific layer rules come from `CLAUDE.md`.
+
+**Code organization** (from `CLAUDE.md` → **Code Organization Principles**): package placement must follow consumption (single-consumer code lives next to its consumer, not in the shared tree; `internal/` over `pkg/` absent a real external importer); no premature deduplication (no shared `bootstrap`/`startup`/`wiring` layer across binaries; no abstraction over coincidental similarity); business logic split by concern, not by launcher/deployment/binary.
 
 **Project consistency**: established patterns, naming conventions, and error-handling rules as defined in `CLAUDE.md`.
 
