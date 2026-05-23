@@ -7,6 +7,10 @@
 *.iml
 *.swp
 
+# Claude Code local overrides
+**/.claude/settings.local.json
+**/.claude/agent-memory/**/scratch/
+
 # Flutter / Dart
 **/.dart_tool/
 **/.flutter-plugins

@@ -2,52 +2,68 @@
 
 Project-agnostic starter kits for working with [Claude Code](https://claude.ai/code)
 across three stacks. Each subdirectory drops into a fresh (or existing) project and
-gives you a ready-to-use `CLAUDE.md`, a four-agent pipeline, and a planning workflow.
+gives you a ready-to-use `CLAUDE.md`, a four-agent pipeline, default permissions,
+slash commands, and a planning workflow.
 
 ## Stacks
 
-| Directory | Stack | Agents |
-|-----------|-------|--------|
-| [`flutter/`](./flutter) | Flutter / Dart | architect · engineer · reviewer · testdoctor |
-| [`golang/`](./golang) | Go | architect · engineer · reviewer · testdoctor |
-| [`scala/`](./scala) | Scala | architect · engineer · reviewer · testdoctor |
+| Directory | Stack | Reviewer pipeline |
+|-----------|-------|-------------------|
+| [`flutter/`](./flutter) | Flutter / Dart | single reviewer |
+| [`golang/`](./golang) | Go | 5-reviewer fan-out |
+| [`scala/`](./scala) | Scala (ZIO) | single reviewer |
 
 Each starter is independent — pick the one matching your stack and ignore the rest.
 
-## What you get
+## What you get per stack
 
 - **`CLAUDE.md`** — architecture, error-handling contract, test structure rule,
   planning workflow, and the agent pipeline, with `<...>` placeholders to fill in
   for your project.
-- **Four specialized agents** in `.claude/agents/`:
+- **Four subagents** in `.claude/agents/`:
   - `*-architect` — planning and decomposition
   - `*-engineer` — implementation
   - `*-reviewer` — review and verdicts
   - `*-testdoctor` — failing-test triage
-- **`plans/` directory** — lifecycle wired in (`active` → `completed/` → `history/`).
+- **`.claude/settings.json`** — committed default permission allowlist tuned to the
+  stack (build/test/lint commands, common git), and a strict deny list (`.env`,
+  `.idea`, destructive ops). Personal overrides go in `.claude/settings.local.json`
+  (gitignored).
+- **`.claude/commands/`** — two slash commands:
+  - `/new-plan <slug>` scaffolds the next `plans/NNN-slug.md`
+  - `/complete-plan <NNN|slug>` verifies the stack's test/lint gates and moves the
+    plan to `plans/completed/YYMMDD.NNNN.slug.md`
+- **`.claude/agent-memory/<agent-name>/`** — empty per-agent memory directories
+  with a README explaining the commit policy.
+- **`plans/`** — lifecycle (`active` → `completed/` → `history/`) wired in, with
+  one worked example plan per stack under `plans/completed/`.
 
-## How to use
+## Install
 
-1. Copy the contents of the relevant stack directory into your project:
-   ```
-   CLAUDE.md
-   .claude/agents/*.md
-   plans/
-   ```
-2. Open `CLAUDE.md` and replace every `<...>` placeholder with the real values
-   for your project (versions, libraries, dependencies, constraints).
-3. Optionally adjust the agents in `.claude/agents/` — most project-specific edits
-   should land in `CLAUDE.md` rather than in the agents themselves.
-4. Start a session with Claude Code in the repo. The agents and planning workflow
-   are picked up automatically.
+From this repo's root:
 
-See the per-stack READMEs for stack-specific notes (e.g. [`flutter/README.md`](./flutter/README.md)).
+```bash
+./install.sh <flutter|golang|scala> /path/to/your-project
+```
 
-## Agent memory
+The script copies `CLAUDE.md`, the entire `.claude/` directory, and the `plans/`
+skeleton into the target project. It refuses to overwrite existing files unless you
+pass `--force`.
 
-Agents write persistent memory to `.claude/agent-memory/<agent-name>/`. These files
-are project-scoped and intended to be committed — they capture user preferences,
-non-obvious feedback, ongoing project state, and pointers to external resources.
+After install, open `CLAUDE.md` in the target project and replace every `<...>`
+placeholder with real values (versions, libraries, dependencies, constraints).
+Review `.claude/settings.json` and tighten or loosen the allowlist for your context.
+
+See the per-stack READMEs for stack-specific notes:
+[flutter](./flutter/README.md) · [golang](./golang/README.md) · [scala](./scala/README.md).
+
+## Why ship `.claude/` instead of telling people to write their own?
+
+- **Zero permission prompts on day one** for the obvious safe commands of each stack.
+- **Slash commands automate the brittle parts** of the planning workflow (the
+  `YYMMDD.NNNN` rename in particular is easy to get wrong by hand).
+- **Agent memory** survives across sessions, so feedback the user gives ("don't mock
+  the database", "stop summarizing at the end") sticks.
 
 ## License
 
