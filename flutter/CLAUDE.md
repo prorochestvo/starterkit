@@ -456,10 +456,10 @@ User describes task
             discipline
     ↓
    Orchestrator synthesises all three reports, deduplicates findings,
-   resolves conflicts (e.g. one reviewer flags as Blocker what another
+   resolves conflicts (e.g. one reviewer flags as P0 what another
    accepts as a trade-off), and presents the merged punch list to the user.
     ↓
-  ❌ Blocker/Major found?  → Back to flutter-engineer with the consolidated findings.
+  ❌ P0/P1 found?  → Back to flutter-engineer with the consolidated findings.
                              After fix, run ONE targeted reviewer pass on the changed
                              lines (not all 3 again) before re-approval.
   ⚠️  Tests failing?        → flutter-testdoctor diagnoses and patches, then rerun the
@@ -474,7 +474,7 @@ User describes task
 |-------|------|--------|
 | `flutter-architect` | Planning, decomposition, trade-offs | New plan file in `plans/` |
 | `flutter-engineer` | Implementation, tests for new code | Code + tests in the repo |
-| `flutter-reviewer` (×3, parallel) | Lens-specific verdicts, severity-ranked findings, patch sketches | Three independent review reports |
+| `flutter-reviewer` (×3, parallel) | Lens-specific verdicts, priority-ranked findings, patch sketches | Three independent review reports |
 | `flutter-testdoctor` | Triage of failing tests, minimal patches | Code/test fixes, re-run of `flutter test` |
 
 The orchestrating agent (the main Claude session driving the pipeline) owns
@@ -482,17 +482,17 @@ synthesis: merging the three reports, resolving conflicting verdicts, deciding
 which findings to act on, and moving the plan to `completed/` once everyone
 signs off.
 
-Severity scale used by reviewers: **Blocker / Major / Minor / Nit**.
+Priority scale used by reviewers: **P0 / P1 / P2 / P3**.
 
 ### Rules
 
 - **No skipping stages.** Every task starts with the architect and ends with the three-reviewer fan-out.
 - **Plan file first.** The architect MUST produce a plan file before any code is written. If a plan already exists for the task, update it rather than creating a new one.
 - **Three reviewers, three lenses, one message.** All three `flutter-reviewer` agents are launched in a single tool-call batch (multiple `Agent` blocks in one message) so they run in parallel. Each prompt names the lens explicitly and tells the agent what to SKIP (the other lenses) to avoid duplicated work.
-- **No solo reviewer pass on first review.** Even for small changes the full three-lens fan-out is required, because the lenses catch genuinely different classes of issue (Lens A won't see ops/log-volume problems; Lens C won't see test gaps). Skipping lenses is what the orchestrator does AFTER a Blocker/Major fix, not BEFORE the first verdict.
-- **Lens prompts are self-contained.** Each reviewer's prompt must include: (1) the lens name, (2) what to focus on, (3) what to SKIP (so it doesn't restate other lenses), (4) the file list, (5) the deliverable shape (Blocker / Major / Minor / Nit with `file:line` + patch sketch), (6) the word cap (typically 600 words).
-- **Re-review after fixes is single-pass.** Once an engineer addresses Blocker/Major findings, the orchestrator runs ONE reviewer pass scoped to the changed lines, not the full fan-out. Re-running all three each iteration is expensive and rediscovers nothing.
-- **Conflict resolution is explicit.** When reviewers disagree (one says Blocker, another says trade-off), the orchestrator chooses, names the rejected suggestion, and explains the reasoning to the user before moving on. The user has final say.
-- **Orchestrator gates completion.** The plan moves to `plans/completed/` only after every reviewer's Blocker and Major findings are addressed (either fixed, or explicitly accepted with rationale). The rename uses the standard `YYMMDD.NNNN.slug.md` format.
+- **No solo reviewer pass on first review.** Even for small changes the full three-lens fan-out is required, because the lenses catch genuinely different classes of issue (Lens A won't see ops/log-volume problems; Lens C won't see test gaps). Skipping lenses is what the orchestrator does AFTER a P0/P1 fix, not BEFORE the first verdict.
+- **Lens prompts are self-contained.** Each reviewer's prompt must include: (1) the lens name, (2) what to focus on, (3) what to SKIP (so it doesn't restate other lenses), (4) the file list, (5) the deliverable shape (P0 / P1 / P2 / P3 with `file:line` + patch sketch), (6) the word cap (typically 600 words).
+- **Re-review after fixes is single-pass.** Once an engineer addresses P0/P1 findings, the orchestrator runs ONE reviewer pass scoped to the changed lines, not the full fan-out. Re-running all three each iteration is expensive and rediscovers nothing.
+- **Conflict resolution is explicit.** When reviewers disagree (one says P0, another says trade-off), the orchestrator chooses, names the rejected suggestion, and explains the reasoning to the user before moving on. The user has final say.
+- **Orchestrator gates completion.** The plan moves to `plans/completed/` only after every reviewer's P0 and P1 findings are addressed (either fixed, or explicitly accepted with rationale). The rename uses the standard `YYMMDD.NNNN.slug.md` format.
 - **`flutter analyze` and `flutter test` must pass** before review begins. If either fails, hand the logs to `flutter-testdoctor` first — reviewers should not waste time on a red tree.
 - **Testdoctor is scoped.** It patches tests or the minimal production code needed to make the failure go away. It does not redesign or refactor.
