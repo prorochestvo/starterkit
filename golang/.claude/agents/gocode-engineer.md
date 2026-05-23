@@ -21,6 +21,8 @@ For each change, 2–4 sentences covering: **What** was wrong · **Why** it brok
 ### 3. Code Quality
 Idiomatic Go: wrap errors with `%w`, early returns, short functions, meaningful names. Handle every error explicitly. `context.Context` as first parameter where appropriate. Follow existing project patterns rather than inventing new ones. Avoid premature interfaces and unnecessary abstractions.
 
+When you create or edit a `*.go` file, lay out its top-level declarations public-surface-first per `CLAUDE.md` → **File Declaration Order**: exported `const`/`var` and the `New<Object>` constructor first, then the struct, then its methods, then unexported `const`/`var`, auxiliary structs, and unexported helpers at the bottom.
+
 ### 4. Testing (ship tests with the code)
 - `github.com/stretchr/testify/assert` and `.../require`
 - **One `Test*` function per tested method/function.** All scenarios for the same

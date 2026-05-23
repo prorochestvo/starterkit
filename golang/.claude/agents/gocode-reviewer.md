@@ -24,6 +24,7 @@ You are normally invoked as one of three parallel reviewers, each with a distinc
   - **Placement by consumption** — single-consumer code parked in the shared tree (`internal/`) instead of next to its only consumer (`cmd/<binary>/`); a `pkg/` package with no external (out-of-module) importer; anything kept in the shared/public tree merely because it's "reusable in principle".
   - **Premature deduplication** — a shared `bootstrap`/`startup`/`wiring` layer across binaries, or any abstraction extracted over coincidental similarity rather than a genuine cross-cutting invariant. Flag the abstraction, not the duplication.
   - **Business logic grouped by launcher** — packages reorganized by runtime-vs-operator, deployment, or consuming binary instead of by concern.
+  - **Declaration order** (from `CLAUDE.md` → **File Declaration Order**) — top-level declarations not ordered public-surface-first: exported `const`/`var` + the `New<Object>` constructor, then the struct, its methods, then unexported `const`/`var`, auxiliary structs, and unexported helpers at the bottom. Flag files that bury the public surface below private internals.
 
 If no lens is named you are in **solo mode** (typically a re-review pass after a P0/P1 fix). In solo mode use the full scope below.
 
@@ -43,6 +44,8 @@ If no lens is named you are in **solo mode** (typically a re-review pass after a
 **Architecture violations**: layer boundary violations (e.g., lower layer doing upper layer's work), leaking infrastructure concerns into domain, handlers containing business logic. Specific layer rules come from `CLAUDE.md`.
 
 **Code organization** (from `CLAUDE.md` → **Code Organization Principles**): package placement must follow consumption (single-consumer code lives next to its consumer, not in the shared tree; `internal/` over `pkg/` absent a real external importer); no premature deduplication (no shared `bootstrap`/`startup`/`wiring` layer across binaries; no abstraction over coincidental similarity); business logic split by concern, not by launcher/deployment/binary.
+
+**File declaration order** (from `CLAUDE.md` → **File Declaration Order**): each `*.go` file orders top-level declarations public-surface-first — exported `const`/`var` and the `New<Object>` constructor, then the struct, its methods, then unexported `const`/`var`, auxiliary structs, and unexported helpers at the bottom. Flag files that bury the public surface below private internals.
 
 **Project consistency**: established patterns, naming conventions, and error-handling rules as defined in `CLAUDE.md`.
 

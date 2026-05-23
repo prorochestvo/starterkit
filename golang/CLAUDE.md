@@ -210,6 +210,33 @@ something to flag, not silently accept.
 - **Why:** grouping by launcher couples organization to deployment, which changes;
   cohesion by concern is stabler. Isolation + simplicity is the real quality bar.
 
+## File Declaration Order
+
+Order the top-level declarations in each `*.go` file so the important, public surface
+is at the top and private internals are hidden at the bottom. A reader should see
+everything important first; scanning the file should not require digging.
+
+For a file built around one object:
+
+1. Exported `const` and `var`, plus the `New<Object>` constructor(s). These come first
+   because they are what you need to create and use the object — the first thing a
+   reader looks for.
+2. The object's struct definition.
+3. The object's methods (prefer alphabetical order; not mandatory).
+4. Unexported `const` and `var`.
+5. Auxiliary/helper structs (unexported support types) — placed between the unexported
+   vars/consts and the unexported methods.
+6. Unexported methods/functions (prefer alphabetical order; not mandatory).
+
+- **Multiple structs in one file:** keep the same layout but put the primary ("main")
+  struct first. A combined layout is acceptable but very rare — two large objects in one
+  file usually means the file should be split into two.
+- **Files with no object** (free functions plus a config/data type): apply the same
+  spirit — exported type(s) and function(s) on top, then unexported consts/vars, then
+  auxiliary structs, then unexported helper functions.
+
+Treat a file that violates this order as something to fix.
+
 ## Error Handling
 
 Define the project's error-handling contract here. The example below describes a
