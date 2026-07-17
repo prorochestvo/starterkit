@@ -1,0 +1,37 @@
+{
+  "name": "starterkit",
+  "owner": {
+    "name": "Seilbek",
+    "email": "seilbekskindirov@gmail.com"
+  },
+  "metadata": {
+    "description": "Personal engineering starterkit: a stack-agnostic plan/implement/review pipeline, per-stack conventions, and distilled book knowledge as on-demand skills.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "pipeline",
+      "source": "./plugins/pipeline",
+      "description": "Stack-agnostic engineering pipeline: architect, engineer, reviewer (3-lens fan-out), testdoctor agents plus the plan lifecycle skills.",
+      "category": "workflow"
+    },
+    {
+      "name": "stack-go",
+      "source": "./plugins/stack-go",
+      "description": "Go conventions (style, declaration order, test structure, error contract, code organization) and Go engineering knowledge (common mistakes, concurrency, performance).",
+      "category": "stack"
+    },
+    {
+      "name": "stack-flutter",
+      "source": "./plugins/stack-flutter",
+      "description": "Flutter/Dart conventions: state management discipline, forbidden constructs, test structure, error contract.",
+      "category": "stack"
+    },
+    {
+      "name": "knowledge",
+      "source": "./plugins/knowledge",
+      "description": "Distilled engineering doctrine from foundational books: DDD, SQL antipatterns, PostgreSQL performance, MongoDB modeling, testing, production stability, data systems, software design.",
+      "category": "knowledge"
+    }
+  ]
+}

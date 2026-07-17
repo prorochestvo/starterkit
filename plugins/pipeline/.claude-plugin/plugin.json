@@ -1,0 +1,8 @@
+{
+  "name": "pipeline",
+  "description": "Stack-agnostic engineering pipeline: architect, engineer, reviewer (3-lens fan-out), testdoctor agents plus the plan lifecycle skills (new-plan, complete-plan), canonical permission sync (sync-permissions), and project onboarding (onboard).",
+  "version": "1.4.0",
+  "author": {
+    "name": "Seilbek"
+  }
+}
