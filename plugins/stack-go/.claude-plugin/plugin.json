@@ -1,0 +1,8 @@
+{
+  "name": "stack-go",
+  "description": "Go stack: project conventions (style, declaration order, test structure, error contract, code organization) and distilled Go knowledge (common mistakes, concurrency, performance).",
+  "version": "1.1.0",
+  "author": {
+    "name": "Seilbek"
+  }
+}

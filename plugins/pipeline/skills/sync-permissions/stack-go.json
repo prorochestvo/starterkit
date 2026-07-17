@@ -1,0 +1,26 @@
+{
+  "allow": [
+    "Bash(go build:*)",
+    "Bash(go test:*)",
+    "Bash(go vet:*)",
+    "Bash(go fmt:*)",
+    "Bash(go mod:*)",
+    "Bash(go run:*)",
+    "Bash(go env:*)",
+    "Bash(go doc:*)",
+    "Bash(go list:*)",
+    "Bash(go tool:*)",
+    "Bash(go version)",
+    "Bash(CGO_ENABLED=0 go build:*)",
+    "Bash(CGO_ENABLED=0 go test:*)",
+    "Bash(CGO_ENABLED=0 go vet:*)",
+    "Bash(CGO_ENABLED=0 go run:*)",
+    "Bash(CGO_ENABLED=1 go test:*)",
+    "Bash(gofmt:*)",
+    "Bash(goimports:*)",
+    "Bash(golangci-lint:*)",
+    "Bash(staticcheck:*)",
+    "Bash(make:*)"
+  ],
+  "deny": []
+}

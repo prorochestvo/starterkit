@@ -1,0 +1,8 @@
+{
+  "name": "stack-flutter",
+  "description": "Flutter/Dart stack: project conventions (state management discipline, forbidden constructs, test structure, error contract).",
+  "version": "1.0.0",
+  "author": {
+    "name": "Seilbek"
+  }
+}
