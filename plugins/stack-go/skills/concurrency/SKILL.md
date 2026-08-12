@@ -7,6 +7,13 @@ description: Go concurrency doctrine - goroutine lifecycle ownership, channels v
 
 Distilled from *Effective Concurrency in Go* (Burak Serdar) and the Go memory model. Concurrency is a correctness problem first and a performance tool second.
 
+The mechanical failures — copying a mutex (`govet` copylocks), `WaitGroup.Add`
+inside the goroutine (`staticcheck` SA2000), a missed `cancel()` (`govet`
+lostcancel), a context in a struct field (`containedctx`), a context that fails
+to inherit (`contextcheck`) — are enforced by `stack-go:lint`. Do not re-report
+them. What follows is what the tools cannot see: ownership, lifetime, and
+whether a design is honest.
+
 ## Doctrine
 
 - **Every goroutine has an owner and a stop condition.** Before `go f()`, answer: who waits for it, how is it told to stop, what happens to its result/error? A goroutine without all three answers is a leak by construction.

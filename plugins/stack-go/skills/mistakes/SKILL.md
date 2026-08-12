@@ -1,88 +1,161 @@
 ---
 name: go-mistakes
-description: Catalog of common Go mistakes for code review and self-checking - shadowing, slice/map gotchas, string handling, error management, concurrency bugs, stdlib traps (time, JSON, SQL, HTTP), and testing pitfalls. Load when reviewing Go diffs or debugging surprising Go behavior.
+description: Go mistakes that a linter cannot decide - slice aliasing, nil-versus-empty at API boundaries, JSON and time traps, resource and pool sizing, panic policy, and test design. Load when reviewing Go diffs or debugging surprising Go behavior. The mechanically enforceable half lives in stack-go:lint.
 ---
 
-# Common Go mistakes (review checklist)
+# Go mistakes that need a human
 
-Distilled from *100 Go Mistakes and How to Avoid Them* (Teiva Harsanyi) plus field experience. Use as a review sweep: scan the diff against each relevant section.
+Distilled from *100 Go Mistakes and How to Avoid Them* (Teiva Harsanyi) plus
+field experience, then filtered: **every rule a linter can decide has been
+removed from this file.** What remains needs context, a boundary contract, or
+knowledge of the deployment.
 
-## Code & project organization
+Before using this list, confirm the linter is green. Reporting a finding that
+`golangci-lint` already printed wastes the reader's attention and teaches them
+to skim.
 
-- **Variable shadowing** — an inner `:=` silently shadows an outer variable (classic: `client, err := ...` inside an `if`, outer `client` stays nil). Check every `:=` inside a block that reuses an outer name.
-- **Utility packages** (`util`, `common`, `helpers`, `base`) — a name that says nothing holds code that belongs nowhere. Name packages by what they provide.
-- **Interface pollution** — interfaces created before a second implementation or consumer exists. Interfaces live on the consumer side; return concrete types, accept interfaces.
-- **`init()` doing real work** — I/O, config reads, global registration with error paths. `init` can't return errors and runs on import; keep it for trivial assignments or avoid it.
-- **Getters/setters cargo-culted from Java** — export the field or design a real behavior method.
-- **Embedding types to "inherit"** — embedding exports the embedded type's full method set as public API. Embed only when that promotion is the intent (e.g. `sync.Mutex` in an unexported struct is fine).
+## Already enforced — do not report these
 
-## Data types
+These were review items once. They are now decided mechanically by
+`stack-go:lint`; trust the tool and spend the attention elsewhere.
 
-- **Slice length vs capacity confusion** — `make([]T, n)` creates n zero values; appending to it grows past them. For an append-loop, `make([]T, 0, n)`.
-- **Slice aliasing leaks** — sub-slicing (`s[low:high]`) shares the backing array: mutations leak between slices, and a tiny sub-slice of a huge slice pins the whole array in memory. Use full slice expressions `s[low:high:max]` or `copy` when independence matters.
-- **`append` on a shared slice** — appending to a sub-slice with spare capacity overwrites the parent's elements. Same fix: three-index slicing or copy.
-- **Nil vs empty slice** — `var s []T` is nil, `[]T{}` is not; JSON encodes them as `null` vs `[]`. Be deliberate at API boundaries.
-- **Checking emptiness with `!= nil`** — use `len(s) == 0`/`len(m) == 0`: correct for both nil and empty.
-- **Map never shrinks** — a map's bucket memory is never released after deletes; a map that grew to millions of entries keeps that footprint. Recreate the map or store pointers when this matters.
-- **Comparing values with `==`** — panics on types containing slices/maps at runtime? No — fails to compile for slices/maps, but interfaces holding uncomparable types panic at runtime. Use `reflect.DeepEqual` (slow) or a custom/generated equality method; in tests use `cmp.Diff`/testify.
-- **Floating-point money** — never `float64` for currency; use integer minor units or a decimal library. Compare floats with a tolerance, never `==`.
+| Mistake | Enforced by |
+|---|---|
+| variable shadowing | `govet` (shadow) |
+| `init()` doing real work | `gochecknoinits` |
+| `make([]T, n)` then append | `makezero`, `prealloc` |
+| nil check next to `len()` | `staticcheck` S1009 |
+| `[]byte`/`string` round-trips | `unconvert`, `mirror`, `perfsprint` |
+| mixed value and pointer receivers | `recvcheck` |
+| named results, naked return | `nakedret` |
+| nil concrete pointer returned as an interface | `nilnil`, `nilerr`, `nilnesserr` |
+| `%v` where `%w` was meant | `errorlint` |
+| silently dropped errors | `errcheck` |
+| bare `break` inside select in a loop | `staticcheck` SA4011 |
+| `defer` in a loop | `gocritic`, `revive` |
+| `time.After` in a loop | `staticcheck` SA1015 |
+| `WaitGroup.Add` inside the goroutine | `staticcheck` SA2000 |
+| copying a mutex | `govet` (copylocks) |
+| context stored in a struct | `containedctx` |
+| HTTP body not closed | `bodyclose` |
+| server without read/header timeouts | `gosec` G112 |
+| string concatenation in a loop | ruleguard |
+| `http.Client` without a timeout | ruleguard |
+| `http.Error` without a return | ruleguard |
+| `time.Time` compared with `==` | ruleguard |
+| money in `float64` | ruleguard |
+| logging and returning the same error | ruleguard |
+| `time.Sleep` in tests | `forbidigo` |
+| missing `t.Parallel()` / `t.Helper()` / `t.Context()` | `paralleltest`, `thelper`, `usetesting` |
 
-## Control structures
+## The pgx blind spot — check this by hand
 
-- **Range copies the element** — `for _, v := range s` gives a copy; mutating `v` does nothing. Index into the slice (`s[i].Field = ...`) to mutate.
-- **Range evaluates the expression once** — `for i := range s { s = append(s, ...) }` does not loop forever, but `for i := 0; i < len(s); i++` with appends does. Know which you want.
-- **Break/continue target in select/switch inside a loop** — a bare `break` inside `select`/`switch` breaks the select, not the loop. Use a label.
-- **`defer` in a loop** — defers accumulate until function return: resource exhaustion in long loops. Extract the loop body into a function.
+`rowserrcheck` and `sqlclosecheck` understand `database/sql` only. A repository
+layer on `jackc/pgx` has **no** automated coverage:
 
-## Strings
+- Every `for rows.Next()` loop needs a `rows.Err()` check after it. Without one
+  a connection dropped mid-iteration returns a short result set and a nil
+  error — the caller sees "fewer rows" and never learns why.
+- Every `Query` result needs a `defer rows.Close()`.
+- A type-erasing wrapper such as `defer func(c interface{ Close() }) { c.Close() }(rows)`
+  closes correctly but hides the fact from tooling. Prefer `defer rows.Close()`
+  so the linter can see it.
 
-- **Iterating bytes when you mean runes** — `s[i]` is a byte; `for i, r := range s` yields rune starts. Mixing them corrupts non-ASCII handling.
-- **Concatenation in a loop** — quadratic. Use `strings.Builder` (with `Grow` when size is known).
-- **Substring pins the parent** — like slices, `s[:n]` on a huge string keeps the whole string alive. `strings.Clone` to detach.
-- **Useless `[]byte(s)`/`string(b)` round-trips** — each is a copy; the `bytes` package mirrors `strings`, use it directly.
+## Data and boundaries
 
-## Functions & methods
+- **Slice aliasing.** Sub-slicing shares the backing array: mutations leak
+  between slices, and a small sub-slice of a huge one pins the whole array.
+  Appending to a sub-slice with spare capacity overwrites the parent's
+  elements. Use a full slice expression `s[low:high:max]` or `copy` when
+  independence matters. Whether independence matters is the judgment.
+- **Nil versus empty slice.** `var s []T` is nil, `[]T{}` is not; JSON encodes
+  them as `null` and `[]`. Pick deliberately at every API boundary and keep the
+  choice consistent across endpoints — a client that special-cases `null` on
+  one route and `[]` on another is a bug you shipped.
+- **A map never shrinks.** Bucket memory is not released on delete. A map that
+  grew to millions of entries keeps that footprint for the process lifetime.
+  Recreate it, or store pointers, when the peak is far above the steady state.
+- **Substrings pin the parent.** `s[:n]` of a huge string keeps the whole
+  string alive. `strings.Clone` detaches it. Relevant when the slice outlives
+  the parse.
+- **Range copies the element.** `for _, v := range s` yields a copy; mutating
+  `v` does nothing, and for a large struct the copy itself costs. Index when
+  you mutate.
+- **Bytes versus runes.** `s[i]` is a byte; `for i, r := range s` yields rune
+  starts. Mixing them corrupts anything non-ASCII — which, on Kazakh and
+  Russian input, is everything.
 
-- **Value vs pointer receiver mixed without intent** — mutation through a value receiver is lost. Default: pointer receiver when the method mutates, the type contains sync primitives, or the struct is large; keep one kind per type unless there's a reason.
-- **Named result parameters hiding bugs** — a bare `return` after forgetting to assign leaves zero values; use named results only for documentation (multiple same-type results) or defer-modification.
-- **Returning a nil concrete pointer as an interface** — `return nil, err` where the nil is a typed pointer makes the interface non-nil (`err != nil` is true with a nil *MyError inside). Return literal `nil` for the interface.
-- **Defer argument evaluation** — arguments to a deferred call are evaluated at `defer` time, not at execution. Close over variables or pass pointers when the final value is needed.
+## Errors
 
-## Error management
-
-- **Wrapping discipline** — wrap with `%w` when the caller may need to match (`errors.Is/As`); use `%v` to deliberately break the chain at a boundary. Wrapping makes the wrapped error part of your API.
-- **Handling an error twice** — log-and-return double-reports; handle once: either log it (and stop propagating) or return it (possibly wrapped), never both.
-- **Ignoring errors silently** — if intentional, write `_ = f()` with a comment saying why. A bare call that drops an error looks like a bug forever.
-- **Errors from deferred calls** — `defer f.Close()` drops the error; on write paths capture it (`defer func() { err = errors.Join(err, f.Close()) }()`).
-- **Panic misuse** — panic only for programmer errors (impossible states, invalid constants at init); never for expected failures like bad input or I/O.
-
-## Concurrency
-
-See `stack-go:concurrency` for the full doctrine. Reviewer's short list:
-
-- Goroutine launched with no defined stop condition or owner (leak by construction).
-- `sync.WaitGroup.Add` called inside the goroutine instead of before launch (race with `Wait`).
-- Copying a `sync.Mutex`/`sync.WaitGroup`/`sync.Cond` by value (embedding in a copied struct, value receiver, passing by value).
-- Channel used where a mutex is honest (protecting a struct field) or vice versa (signaling with flags + sleep).
-- `context.Context` stored in a struct instead of flowing through calls; `context.Background()` deep in call chains that should propagate cancellation.
-- Appending/reading a shared slice or map from multiple goroutines without synchronization — `-race` in tests is mandatory, and absence of a race report is not proof of absence.
-- `errgroup`/worker pool without bounding concurrency (unbounded goroutine-per-item fan-out on user-controlled input).
+- **Wrapping is an API decision.** `%w` makes the wrapped error part of your
+  contract: callers may now match it with `errors.Is`/`errors.As`, and you
+  cannot change it without breaking them. Use `%v` deliberately to cut the
+  chain at a boundary. The linter enforces that you chose; it cannot tell you
+  which choice was right.
+- **Log or return, once.** The mechanical case is caught. The remaining
+  judgment: logging *and* returning a wrapped error is sometimes correct — an
+  operational breadcrumb at a half-state boundary that the caller also has to
+  handle. Ask whether the log line tells an operator something the propagated
+  error will not.
+- **Errors from deferred calls.** `defer f.Close()` drops the error. On write
+  paths that matters — a failed flush loses data — so capture it:
+  `defer func() { err = errors.Join(err, f.Close()) }()`. On read paths it does
+  not.
+- **Panic policy.** Panic only for programmer errors: impossible states,
+  invalid constants at init. Never for bad input, I/O, or anything a caller
+  could reasonably retry.
+- **Deferred argument evaluation.** Arguments to a deferred call are evaluated
+  at `defer` time, not at execution. When the final value matters, close over
+  the variable instead of passing it.
 
 ## Standard library traps
 
-- **`time.After` in a loop/select** — allocates a timer per iteration that is only GC'd on fire; use `time.NewTimer`/`Ticker` with `Reset`/`Stop`.
-- **Monotonic vs wall clock** — `time.Since`/`Sub` use the monotonic clock (good); serialized/parsed timestamps lose it. Don't compare a parsed time to `time.Now()` with `==`; use `.Equal`.
-- **JSON: `any` maps and number types** — unmarshaling into `map[string]any` turns all numbers into `float64`; large int64 IDs corrupt. Use typed structs or `json.Number`.
-- **JSON: embedded `time.Time`** — embedding promotes `MarshalJSON` and hijacks the struct's encoding. Name the field.
-- **`database/sql`: forgetting `rows.Err()`** — a loop that ends early may hide an iteration error; always check after the loop, and always `defer rows.Close()`.
-- **`database/sql` pool defaults** — unlimited `MaxOpenConns` and small idle pool melt databases under load; set `SetMaxOpenConns`, `SetMaxIdleConns`, `SetConnMaxLifetime` explicitly.
-- **HTTP: response body must be read and closed** — `defer resp.Body.Close()` and drain (`io.Copy(io.Discard, resp.Body)`) before close if not fully read, or the connection can't be reused.
-- **HTTP: default client has no timeout** — `http.Client{}` waits forever. Set `Timeout` (and transport-level timeouts for fine control). Same for servers: `ReadTimeout`/`WriteTimeout`/`IdleTimeout` on `http.Server`.
-- **`http.Error` doesn't return** — forgetting `return` after writing an error response continues the handler and double-writes.
+- **JSON into `map[string]any`.** Every number becomes `float64`; an `int64` ID
+  past 2^53 is silently corrupted. Use typed structs or `json.Number`.
+- **Embedded `time.Time`.** Embedding promotes `MarshalJSON` and hijacks the
+  whole struct's encoding. Name the field.
+- **Connection pool sizing.** Unlimited `MaxOpenConns` melts the database under
+  load; too few starves the service. The right numbers come from the
+  deployment — pgbouncer pool mode, instance size, expected concurrency — not
+  from a default. Set all three of max-open, max-idle and conn-max-lifetime
+  explicitly, and be able to say why.
+- **Draining before close.** `bodyclose` proves the body was closed. It does
+  not prove it was read: an unread body stops the connection from being reused.
+  `io.Copy(io.Discard, resp.Body)` before close on any path that abandons a
+  response early.
 
-## Testing pitfalls
+## Structure
 
-- Time-dependent tests using real `time.Sleep` — flaky by design; inject a clock or synchronize on events.
-- Table tests where a failing case doesn't identify itself — use named subtests (`t.Run(tc.name, ...)`).
-- Tests asserting on internal state instead of observable behavior — brittle against refactoring (see `knowledge:testing-doctrine`).
-- Forgetting `-race` locally and discovering races in CI or production.
+- **Interface pollution.** The linters flag oversized and duplicated
+  interfaces. They cannot tell you an interface should not exist yet. Define it
+  where it is consumed, once a second implementation or a real test seam
+  exists — not in anticipation.
+- **Utility packages.** `util`, `common`, `helpers`, `base`: a name that says
+  nothing holds code that belongs nowhere. Name packages by what they provide.
+  A ban list catches the known names; it cannot catch `tools` or `shared`.
+- **Embedding to inherit.** Embedding promotes the embedded type's entire
+  method set into your public API. Do it when that promotion is the intent, not
+  to save typing.
+
+## Concurrency
+
+See `stack-go:concurrency` for the doctrine. The judgment items:
+
+- Every `go` statement has an owner, a stop condition, and a defined path for
+  its error. Missing any of the three is a leak by construction, and no linter
+  can see it.
+- Fan-out is bounded whenever the input size is not fixed. Unbounded
+  goroutine-per-item on user-controlled input is a denial of service you wrote
+  yourself.
+- Channel buffer sizes come from a stated requirement — burst absorption, a
+  known rate mismatch. A buffer that "fixes" a deadlock is hiding one.
+- `-race` catches only races that actually execute. A clean run is not proof.
+
+## Tests
+
+- A failing table case must identify itself: named subtests via
+  `t.Run(tc.name, ...)`, not an index.
+- Assertions target observable behavior, not internal state. A test that breaks
+  on every refactor is measuring the implementation (see
+  `knowledge:testing-doctrine`).
+- One `Test*` function per tested method, scenarios as subtests inside it.

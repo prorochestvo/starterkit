@@ -7,6 +7,12 @@ description: Go performance doctrine - measurement-first optimization, benchmark
 
 Distilled from *Efficient Go* (Bartłomiej Płotka). Efficiency is a requirement like any other: stated, measured, and tested — not vibes.
 
+Missed preallocation (`prealloc`, `makezero`), gratuitous conversions
+(`unconvert`, `mirror`), and `fmt.Sprintf` where a cheaper call exists
+(`perfsprint`) are enforced by `stack-go:lint`. A linter can point at an
+allocation; it cannot tell you whether that allocation is on a hot path. That
+judgment — and the measurement behind it — is this file's subject.
+
 ## Doctrine
 
 - **Never optimize without a measurement and a goal.** The loop is: define the requirement (latency/throughput/memory budget) → measure → find the bottleneck → change one thing → measure again. An optimization without a before/after benchmark is a style change with risk.
