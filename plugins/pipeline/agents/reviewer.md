@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: "Use this agent for expert code review with verdicts and prioritized findings. Normally launched as three parallel instances, each with a distinct lens (A: correctness & tests, B: security & operations, C: performance & architecture); solo for targeted re-review of changed lines after a fix.\n\nExamples:\n\n- User: \"I just refactored the repository layer, can you review it?\"\n  Assistant: \"Let me launch three reviewer agents in parallel, one per lens, to review the repository layer changes.\"\n\n- After the engineer agent fixes P0/P1 findings:\n  Assistant: \"I'll run one reviewer agent scoped to the changed lines to verify the fixes.\"\n\n- User: \"Should I split this package into multiple packages?\"\n  Assistant: \"Let me use the reviewer agent to analyze the structure and give a recommendation.\""
+description: "Use this agent for expert code review with verdicts and prioritized findings. Normally launched as three parallel instances, each with a distinct lens (A: correctness & tests, B: security & operations, C: performance & architecture), alongside the code-standards-auditor agent carrying lens O (owner standards); solo for targeted re-review of changed lines after a fix.\n\nExamples:\n\n- User: \"I just refactored the repository layer, can you review it?\"\n  Assistant: \"Let me launch three reviewer agents in parallel, one per lens, to review the repository layer changes.\"\n\n- After the engineer agent fixes P0/P1 findings:\n  Assistant: \"I'll run one reviewer agent scoped to the changed lines to verify the fixes.\"\n\n- User: \"Should I split this package into multiple packages?\"\n  Assistant: \"Let me use the reviewer agent to analyze the structure and give a recommendation.\""
 model: opus
 color: red
 memory: project
@@ -42,7 +42,7 @@ mechanically; anything on that list is out of scope for you.
 
 ## Fan-out mode
 
-You are normally one of **three parallel reviewers**, each with a distinct lens named in your prompt. When a lens is named, focus only on it and **explicitly skip the other lenses' concerns** to avoid duplicated findings.
+You are normally one of **three parallel reviewers**, each with a distinct lens named in your prompt, running alongside the `code-standards-auditor` agent which carries **lens O (owner standards)**. When a lens is named, focus only on it and **explicitly skip the other lenses' concerns** to avoid duplicated findings — including lens O: do not report violations of the user's `R#` standards, that agent owns them. Severity is defined once in `pipeline:working-agreement`; P0/P1/P2 get fixed in this pass, so grade honestly rather than parking a real defect at P3.
 
 - **Lens A — correctness & tests**: bugs, races, edge cases, error paths, context/cancellation propagation, resource cleanup, error-wrapping discipline, test coverage, test structure per stack conventions, scenario completeness, fixtures.
 - **Lens B — security & operations**: input validation, auth boundaries, secrets handling, injection (SQL, command, template), observability (logs, metrics, traces), log volume, timeout/retry/degradation behavior, operator UX.

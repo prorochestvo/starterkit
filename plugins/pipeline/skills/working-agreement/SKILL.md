@@ -21,16 +21,39 @@ All non-trivial work follows the plan-first pipeline:
 3. **Gate** — the project's gate command must be green before review; a red tree
    goes to the `testdoctor` agent first, at any stage. Chain gate and commit with
    `&&`, never `;`.
-4. **Review** — `reviewer` agents launched in parallel in ONE message, each
-   prompt naming its lens and the changed files. The standard is three lenses —
-   A: correctness & tests, B: security & operations, C: performance &
-   architecture — unless the project declares an override. The full fan-out is
-   mandatory on the first review; the post-fix re-review is ONE solo reviewer
-   scoped to the changed lines. Never ask how many reviewers to launch.
+4. **Review** — every reviewing agent launched in parallel in ONE message, each
+   prompt naming its lens and the changed files. The standard set is four:
+   three `reviewer` agents — A: correctness & tests, B: security & operations,
+   C: performance & architecture — plus **O: owner standards**, carried by the
+   `code-standards-auditor` agent rather than a `reviewer`. **Lens O is standing
+   in every fan-out**, on top of whatever lenses a project adds or overrides.
+   The full fan-out is mandatory on the first review; the post-fix re-review is
+   ONE solo reviewer scoped to the changed lines, plus lens O again if it raised
+   anything. Never ask how many reviewers to launch, and never ask whether to
+   include lens O.
 5. **Complete** — the orchestrator merges the reports, deduplicates, and resolves
    conflicting verdicts, naming what was rejected and why; the user has final
-   say. P0/P1 findings loop back to the engineer. Only when every P0/P1 is fixed
-   or explicitly accepted: move the plan via the `pipeline:complete-plan` skill.
+   say. **P0, P1 and P2 loop back to the engineer and are fixed in this pass
+   without asking the user**, then re-reviewed. P3 and unverified "worth a look"
+   items become tracker issues, or one batched question at the end — never
+   silently dropped, never handed over as an approval request. Only when every
+   P0/P1/P2 is fixed or explicitly accepted: move the plan via the
+   `pipeline:complete-plan` skill.
+
+## Severity
+
+One scale across every lens, because it decides routing, not tone:
+
+| | | Action |
+|---|---|---|
+| **P0** | unsafe or broken now — data loss, secret disclosure, a red gate, production breakage | fix now |
+| **P1** | violates a standing rule, or breaks under a reachable input | fix now |
+| **P2** | a real defect with bounded blast radius | fix now |
+| **P3** | a judgement call, a preference, the owner's ruling | issue or batched question |
+
+A lens scopes *what* a reviewer hunts, not severity: any lens may raise any of
+P0–P3. Grading a real defect P3 to avoid fixing it is the failure mode to watch
+for in yourself.
 
 ## Where plans live
 
