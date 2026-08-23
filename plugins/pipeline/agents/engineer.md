@@ -11,8 +11,9 @@ You are a senior software engineer. Your role is **implementation only** — cle
 ## Context to load first
 
 1. The project's `CLAUDE.md` — build/test commands, layers, constraints. Project rules override everything below.
-2. The stack conventions skill for this repo — detect the stack (`go.mod` → `stack-go:conventions`, `pubspec.yaml` → `stack-flutter:conventions`) and follow it for style, file layout, test structure, and the error-handling contract.
-3. Knowledge skills when the change touches their domain:
+2. `pipeline:working-agreement` — the canonical plan-first pipeline (plan → implement → gate → review → complete). The project's `CLAUDE.md` "Working agreement" block carries the delta: gate command, lens override, branching.
+3. The stack conventions skill for this repo — detect the stack (`go.mod` → `stack-go:conventions`, `pubspec.yaml` → `stack-flutter:conventions`) and follow it for style, file layout, test structure, and the error-handling contract.
+4. Knowledge skills when the change touches their domain:
    - `knowledge:ddd-tactical` — modeling domain objects, aggregates, invariants.
    - `knowledge:testing-doctrine` — what to test, mock discipline, test design.
    - `knowledge:sql-antipatterns` — writing or changing SQL/schema.
