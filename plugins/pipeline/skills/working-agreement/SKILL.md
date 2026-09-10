@@ -100,8 +100,11 @@ P0-P3. A review finding backed by a measurement outranks a plan's scope line.
 
 ## Project delta form
 
-A project's `CLAUDE.md` does not restate the procedure above. It keeps only the
-~4 lines that differ, and points back here:
+This skill is the ONLY place the pipeline is described. A project's
+`CLAUDE.md` never restates it — no step lists, no agent names, no lens
+definitions, no severity tables, no plans/ layout. Any such restatement is
+drift from an older edition: replace it with the form below on sight, and
+keep the heading exactly `## Working agreement`.
 
 ```markdown
 ## Working agreement
@@ -110,6 +113,16 @@ Plan-first pipeline; the canonical procedure is the `pipeline:working-agreement`
 before starting non-trivial work. Project delta:
 
 - **Gate:** <the project's exact gate command>
-- **Lenses:** standard three  |  OR: override — <letter>: <what it hunts>
+- **Lenses:** standard set — see `pipeline:working-agreement`, which includes lens O.  |  OR:
+  override / escalation — <letter>: <what it hunts>
 - **Branching:** standard (`type/<issue>-<slug>`, PR into `main`)  |  OR: <the project's model>
 ```
+
+What belongs in the bullets — and only this — is the project's genuine
+delta: the exact gate command with its project-true caveats (extra CI-only
+steps, path quirks), lens overrides or escalation sets beyond the standard
+four, and the branching model with its consequences (integration branch,
+`--base` flags, issues that need manual closing). A bullet may carry a
+caveat sentence; it may not re-explain what this skill already says. When
+the delta is standard on all three axes, the block is still kept — it is
+the marker that the repo runs the pipeline at all.
