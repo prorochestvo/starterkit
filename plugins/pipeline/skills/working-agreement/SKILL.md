@@ -78,10 +78,6 @@ their own contexts, so a main-thread compaction never kills them.
 | reviewer | opus + high | `gemini-3.1-pro` + high | `gpt-5.6-luna` |
 | testdoctor | opus + high | — | — |
 
-Codex sits on the cheapest tier and is absent from plan review — OpenAI
-usage limits are the constraint, not quality; restore heavier tiers by
-editing this table if the limits loosen.
-
 (`gemini-3.1-pro` offers only low/high effort — verified against the agy
 catalog; high is the review tier. Test diagnosis is judgment work, hence
 testdoctor rides the reviewer tier.)
