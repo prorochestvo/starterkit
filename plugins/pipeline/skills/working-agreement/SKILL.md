@@ -48,10 +48,11 @@ carries only its delta (gate command, lens override, branching).
    At any phase, a finding that does not block the implementation goes to
    `plans/backlog/` with its severity recorded — the cycle does not stall on
    it, and nothing is silently dropped.
-4. **Commit** — the cycle ends in ONE commit per plan; keep history linear.
-   Then remove every temporary object the task created — scratch files, work
-   branches, tags, worktrees — and move the plan via the
-   `pipeline:complete-plan` skill.
+4. **Commit** — the cycle ends in a commit: one commit per plan and linear
+   history is the canonical shape — depart from it only when atomicity
+   genuinely demands a split. Then remove every temporary object the task
+   created — scratch files, work branches, tags, worktrees — and move the
+   plan via the `pipeline:complete-plan` skill.
 
 ## Background execution & context hygiene
 
@@ -62,10 +63,10 @@ the owner and accept new commands while stages run. Do not block the
 conversation waiting on a stage: report stage completions as they land, and
 interleave new owner requests with the running pipeline.
 
-Context hygiene: the harness auto-compacts at roughly 50% of the context
-window (`autoCompactWindow` in the global settings). Approaching that line,
-land the in-flight tasks and let compaction happen at a task boundary rather
-than mid-stage — the precompact handoff (deterministic harvest plus model
+Context hygiene: auto-compact triggers at 50% of the context window
+(`autoCompactWindow` in the global settings). Past that line, start no new
+stage: finish the active tasks and compact as soon as all of them are done —
+never mid-stage. The precompact handoff (deterministic harvest plus model
 synthesis) carries the hard state across, and background subagents live in
 their own contexts, so a main-thread compaction never kills them.
 
@@ -75,7 +76,12 @@ their own contexts, so a main-thread compaction never kills them.
 |---|---|---|---|
 | architect / plan review | opus + high | `gemini-3.8-flash` + low | `gpt-5.6-luna` |
 | engineer | sonnet + medium | — | — |
-| reviewer | opus + high | `gemini-3.1-pro` + medium | `gpt-5.6-terra` |
+| reviewer | opus + high | `gemini-3.1-pro` + high | `gpt-5.6-terra` |
+| testdoctor | opus + high | — | — |
+
+(`gemini-3.1-pro` offers only low/high effort — verified against the agy
+catalog; high is the review tier. Test diagnosis is judgment work, hence
+testdoctor rides the reviewer tier.)
 
 Gemini and codex are reached through the `gemini` and `codex` skills
 (headless CLIs). They see nothing of the session: every call carries
@@ -90,8 +96,9 @@ gemini and codex (their reviewer tiers), and weigh the three positions:
   the reversal path in the plan, and keep moving.
 - **No consensus** → ONE batched question to the owner, recommendation first.
 
-Decisions that are the owner's by nature — scope, preference, business
-context, money — skip the quorum and go straight to the owner.
+A question that is the owner's by nature — scope, preference, business
+context, money — is not a blocking implementation decision at all: no
+quorum can answer it, so it goes to the owner directly.
 
 ## Severity
 
