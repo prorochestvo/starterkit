@@ -20,10 +20,9 @@ carries only its delta (gate command, lens override, branching).
    - **Claude plan review** — 2-3 `reviewer` lenses (opus, high) over the
      plan; findings go back to the architect and the cycle repeats until the
      plan is approved.
-   - **External plan review** — one general lens each from gemini
-     (`gemini-3.8-flash`, low effort) and codex (`gpt-5.6-luna`) via the
-     `gemini` / `codex` skills. Fold their recommendations in, or record in
-     the plan why one was rejected.
+   - **External plan review** — one general lens from gemini
+     (`gemini-3.8-flash`, low effort) via the `gemini` skill. Fold its
+     recommendations in, or record in the plan why one was rejected.
 2. **Code** — the `engineer` agent (sonnet, medium effort) executes the
    plan's tasks with tests. Side tasks and nuances that do not block the work
    go to `plans/backlog/` — one file each — and the cycle moves on. A genuine
@@ -43,8 +42,8 @@ carries only its delta (gate command, lens override, branching).
      its own sequential pass and its grooming is applied directly: the goal
      is code that reads as if the owner wrote it. The owner keeps growing
      that rule set; never skip this pass and never ask whether to run it.
-   - **External single-lens reviews** — codex (`gpt-5.6-terra`) and gemini
-     (`gemini-3.1-pro`, medium effort), one lens each over the final diff.
+   - **External single-lens reviews** — codex (`gpt-5.6-luna`) and gemini
+     (`gemini-3.1-pro`, high effort), one lens each over the final diff.
    At any phase, a finding that does not block the implementation goes to
    `plans/backlog/` with its severity recorded — the cycle does not stall on
    it, and nothing is silently dropped.
@@ -74,10 +73,14 @@ their own contexts, so a main-thread compaction never kills them.
 
 | Role | Claude | Gemini | Codex |
 |---|---|---|---|
-| architect / plan review | opus + high | `gemini-3.8-flash` + low | `gpt-5.6-luna` |
+| architect / plan review | opus + high | `gemini-3.8-flash` + low | — |
 | engineer | sonnet + medium | — | — |
-| reviewer | opus + high | `gemini-3.1-pro` + high | `gpt-5.6-terra` |
+| reviewer | opus + high | `gemini-3.1-pro` + high | `gpt-5.6-luna` |
 | testdoctor | opus + high | — | — |
+
+Codex sits on the cheapest tier and is absent from plan review — OpenAI
+usage limits are the constraint, not quality; restore heavier tiers by
+editing this table if the limits loosen.
 
 (`gemini-3.1-pro` offers only low/high effort — verified against the agy
 catalog; high is the review tier. Test diagnosis is judgment work, hence
