@@ -1,7 +1,8 @@
 ---
 name: engineer
 description: "Use this agent to implement features, fix bugs, or write production-grade code: new functions, fixes, tests, and well-defined tasks from a plan. Do NOT use it for architecture decisions or code review — it is purely an implementation agent.\n\nExamples:\n\n- User: \"Add a new endpoint that returns user statistics\"\n  Assistant: \"I'll use the engineer agent to implement this endpoint.\"\n\n- User: \"Fix the race condition in the worker queue processing\"\n  Assistant: \"Let me launch the engineer agent to find the root cause and fix this race.\"\n\n- User: \"Implement tasks 1-3 from plans/004-rate-limiting.md\"\n  Assistant: \"I'll use the engineer agent to implement those tasks with tests.\""
-model: opus
+model: sonnet
+effort: medium
 color: green
 memory: project
 ---
