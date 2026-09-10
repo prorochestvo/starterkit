@@ -1,6 +1,6 @@
 ---
 name: working-agreement
-description: The canonical plan-first pipeline - plan, implement, gate, parallel review, complete - plus the plans/ layout, the project backlog (plans/backlog.md), and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a plans/NNN-slug.md, recording or triaging a side-question in plans/backlog.md, invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many review lenses to run.
+description: The canonical plan-first pipeline - plan, implement, gate, parallel review, complete - plus the plans/ layout, the project backlog (plans/backlog/), and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a plans/NNN-slug.md, recording or triaging a side-question in plans/backlog/, invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many review lenses to run.
 ---
 
 # Working agreement
@@ -35,7 +35,7 @@ All non-trivial work follows the plan-first pipeline:
    conflicting verdicts, naming what was rejected and why; the user has final
    say. **P0, P1 and P2 loop back to the engineer and are fixed in this pass
    without asking the user**, then re-reviewed. P3 and unverified "worth a look"
-   items become tracker issues (or `plans/backlog.md` entries in a repo
+   items become tracker issues (or `plans/backlog/` entries in a repo
    without a tracker), or one batched question at the end — never
    silently dropped, never handed over as an approval request. Only when every
    P0/P1/P2 is fixed or explicitly accepted: move the plan via the
@@ -63,27 +63,35 @@ Plans live in `plans/` (active), `plans/completed/` (shipped,
 concern. A plan's own Status line and its position in `plans/` are both
 unreliable — verify completion against the code, not the header.
 
-## The backlog — `plans/backlog.md`
+## The backlog — `plans/backlog/`
 
 Side-questions, ideas, and deferred concerns that surface mid-task are
-appended here at the moment they surface — one entry, then back to the task.
-The backlog exists so a passing thought neither derails the current work nor
-evaporates. Entry form:
+captured the moment they surface — one file, then back to the task. The
+backlog exists so a passing thought neither derails the current work nor
+evaporates.
+
+One question per file, named like completed plans — date raised plus the
+next free index across the directory: `plans/backlog/YYMMDD.NNNN.slug.md`
+(indexes are never reused, dropped files keep theirs). File form:
 
 ```markdown
-## <short imperative title>
+# <short imperative title>
+
 - raised: <YYYY-MM-DD> — <one-line context: during what work>
-- question: <what needs discussing, evaluating, or deciding>
 - decision: open
+
+<The question: what needs discussing, evaluating, or deciding, with
+whatever context a cold reader needs to judge it.>
 ```
 
 Triage happens when the owner asks ("разберём беклог", "triage the backlog")
-or when picking work with no instruction: every reviewed entry gets an
-explicit decision — `accepted → plans/NNN-slug.md (<date>)` or
-`dropped — <one-line reason> (<date>)`. Dropped entries stay in the file:
-a drop with a reason can be argued with later; a deletion cannot. Never
-delete or resolve an entry silently, and never turn triage into one
-question per item — batch it.
+or when picking work with no instruction: every reviewed file gets an
+explicit decision on its `decision:` line — `accepted → plans/NNN-slug.md
+(<date>)` or `dropped — <one-line reason> (<date>)`. Dropped files stay in
+place: a drop with a reason can be argued with later; a deletion cannot.
+Never delete or resolve an entry silently, and never turn triage into one
+question per item — batch it. Files with `decision: open` are the open
+backlog; the rest are its decision record.
 
 ## Lens versus severity
 
