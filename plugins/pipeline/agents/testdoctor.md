@@ -2,6 +2,7 @@
 name: testdoctor
 description: "Use this agent when tests are failing and you need diagnosis and surgical fixes. Launch it whenever test output contains failures, panics, race warnings, or assertion errors — at any stage of work.\n\nExamples:\n\n- Assistant runs the project's test command and sees failures:\n  Assistant: \"Tests failed. Let me use the testdoctor agent to diagnose and fix these failures.\"\n\n- User pastes failing test output:\n  User: \"These tests are failing, can you fix them? <test output>\"\n  Assistant: \"Let me use the testdoctor agent to analyze these failures and apply fixes.\""
 model: opus
+effort: high
 color: yellow
 memory: project
 ---
