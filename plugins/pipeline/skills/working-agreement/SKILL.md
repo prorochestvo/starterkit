@@ -148,12 +148,26 @@ on the `raised:` line.
 
 Triage happens when the owner asks ("разберём беклог", "triage the backlog")
 or when picking work with no instruction: every reviewed file gets an
-explicit decision on its `decision:` line — `accepted → plans/NNN-slug.md
-(<date>)` or `dropped — <one-line reason> (<date>)`. Dropped files stay in
-place: a drop with a reason can be argued with later; a deletion cannot.
-Never delete or resolve an entry silently, and never turn triage into one
-question per item — batch it. Files with `decision: open` are the open
-backlog; the rest are its decision record.
+explicit decision on its `decision:` line — `accepted` or `dropped —
+<one-line reason> (<date>)`. Never resolve an entry silently, and never turn
+triage into one question per item — batch it.
+
+The backlog is a tracker, not an archive, so the two decisions end
+differently:
+
+- **accepted** — the entry **leaves `plans/backlog/` the moment the work
+  starts**, not when it finishes. Its content moves into the plan that now
+  owns it, the plan records `backlog: YYMMDD.NNNN.slug (raised <date>)` under
+  its header, and the backlog file is deleted in the same commit that adds
+  the plan. From there it follows the ordinary plan lifecycle and ends in
+  `plans/completed/` — an accepted entry is never tracked in two places at
+  once.
+- **dropped** — the file stays in place with its reason: a drop with a reason
+  can be argued with later, a deletion cannot.
+
+So `plans/backlog/` holds exactly the open questions plus the dropped ones;
+anything accepted is visible as a plan, active or completed. The deleted
+entries are recoverable from git history through the plan's `backlog:` line.
 
 ## Project delta form
 

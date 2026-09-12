@@ -17,6 +17,9 @@ Steps:
 ```markdown
 # Task Breakdown
 
+<!-- only when this plan comes from a backlog entry: -->
+- backlog: YYMMDD.NNNN.slug (raised <YYYY-MM-DD>)
+
 ## Overview
 
 <one-paragraph description of the task and its motivation>
@@ -47,6 +50,12 @@ Steps:
 - <trade-off>
 ```
 
-4. Report the created path and the chosen number.
+4. If the plan originates from a `plans/backlog/` entry: move that entry's
+   content into the plan, fill the `backlog:` header line, and **delete the
+   backlog file** — accepted work is tracked as a plan, never in both places.
+   Stage the deletion together with the new plan so one commit carries the
+   handover.
+5. Report the created path, the chosen number, and the backlog entry it
+   consumed, if any.
 
 Do not write any production code. This skill only creates the plan file.
