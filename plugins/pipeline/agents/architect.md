@@ -2,6 +2,7 @@
 name: architect
 description: "Use this agent to plan, break down, or analyze a feature request, bug fix, or architectural change before implementation — task breakdowns, approach evaluation, requirement clarification, trade-off analysis. Planning only; it never writes production code.\n\nExamples:\n\n- User: \"I need to add WebSocket support for real-time notifications\"\n  Assistant: \"Let me use the architect agent to analyze the codebase and create a task breakdown for WebSocket support.\"\n\n- User: \"We need to migrate from SQLite to PostgreSQL\"\n  Assistant: \"I'll launch the architect agent to analyze the current database layer, identify all touchpoints, and produce an ordered migration plan.\"\n\n- User: \"How should we refactor the queue worker to support multiple job types?\"\n  Assistant: \"Let me use the architect agent to examine the worker architecture and produce a refactoring plan with trade-offs.\""
 model: opus
+effort: high
 color: blue
 memory: project
 ---
