@@ -42,9 +42,8 @@ carries only its delta (gate command, lens override, branching).
      its own sequential pass and its grooming is applied directly: the goal
      is code that reads as if the owner wrote it. The owner keeps growing
      that rule set; never skip this pass and never ask whether to run it.
-   - **External single-lens reviews** — codex (`gpt-6-astra`, high
-     reasoning effort) and gemini (`gemini-3.1-pro`, high effort), one lens
-     each over the final diff.
+   - **External single-lens reviews** — codex (`gpt-5.6-luna`) and gemini
+     (`gemini-3.1-pro`, high effort), one lens each over the final diff.
    At any phase, a finding that does not block the implementation goes to
    `plans/backlog/` with its severity recorded — the cycle does not stall on
    it, and nothing is silently dropped.
@@ -76,20 +75,22 @@ their own contexts, so a main-thread compaction never kills them.
 |---|---|---|---|
 | architect / plan review | opus + high | `gemini-3.1-pro` + high | — |
 | engineer | sonnet + medium | — | — |
-| reviewer | opus + high | `gemini-3.1-pro` + high | `gpt-6-astra` + high |
+| reviewer | opus + high | `gemini-3.1-pro` + high | `gpt-5.6-luna` |
 | testdoctor | opus + high | — | — |
 
 (`gemini-3.1-pro` offers only low/high effort — verified against the agy
 catalog; high is the review tier. Test diagnosis is judgment work, hence
 testdoctor rides the reviewer tier.)
 
-Every external lens runs at its top tier. The cheaper tiers were chosen when
-the external step was assumed to be expensive; measured over the week to
-2026-09-13 the Gemini Pro plan sat at 1% of its weekly allowance, so the
-constraint was imaginary and the quality left on the table was not. If a
-plan limit is actually reached, drop codex to `gpt-5.6-terra` and the plan
-review lens to `gemini-3.8-flash` + medium — those two carry most of the
-volume.
+The two external lenses sit at deliberately different tiers because their
+plans behave differently. Gemini runs at its top tier: measured over the
+week to 2026-09-13 the Pro plan stood at 1% of its weekly allowance, so the
+cheap tier was bought with quality for a constraint that does not exist.
+Codex stays at its cheapest tier: the same week its weekly allowance was
+exhausted on the first day. That reading may be polluted by free-tier usage
+counted after the licence was bought, so it is being observed rather than
+trusted - raise codex to `gpt-6-astra` with high reasoning effort once a
+clean week confirms headroom.
 
 Gemini and codex are reached through the `gemini` and `codex` skills
 (headless CLIs). They see nothing of the session: every call carries
