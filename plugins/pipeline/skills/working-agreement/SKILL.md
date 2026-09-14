@@ -52,6 +52,39 @@ carries only its delta (gate command, lens override, branching).
    genuinely demands a split. Then remove every temporary object the task
    created — scratch files, work branches, tags, worktrees — and move the
    plan via the `pipeline:complete-plan` skill.
+5. **Continue** — a finished cycle does not end the session. Look at what is
+   unfinished and take the next task, without asking. The queue is every
+   `plans/NNN-*.md` that has not reached `plans/completed/`; the order is the
+   owner's standing one, bugs before features and anything blocked on someone
+   else last.
+
+### Claiming, and when to stop
+
+**The claim is the push.** Take a task by moving its plan into the in-progress
+state, committing that and pushing it *before* any other work. A push rejected as
+non-fast-forward means another worker claimed it first: re-read the queue and pick
+the next candidate, never merge and proceed. Git is the lock; a note in a file is
+not one. This matters because a repository has more than one worker — a session on
+the host and the owner on their own machine reach the same `plans/`.
+
+**A candidate is disqualified** when it needs a decision only the owner can make,
+when it is blocked on someone else, when it touches a path the owner has reserved,
+or when finishing it would need the owner's hands. Skip it and leave it exactly
+where it is; do not half-start it to prove it is blocked.
+
+**Stop the chain** at whichever comes first:
+
+- three cycles completed in a row — a bound, not a target;
+- the first cycle whose gate needed more than one fix pass, which says quality is
+  dropping rather than that the next task is ready;
+- an empty or fully disqualified queue.
+
+Then report **once, for the whole chain**, naming each task and its outcome. A
+report per task defeats the point.
+
+*Reversing this:* the bound is the number above and the disqualifiers are the list
+above. Removing the section restores the previous behaviour, where a finished
+cycle ends the session.
 
 ## Background execution & context hygiene
 
