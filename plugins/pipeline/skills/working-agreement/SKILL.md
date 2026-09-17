@@ -43,7 +43,22 @@ carries only its delta (gate command, lens override, branching).
      is code that reads as if the owner wrote it. The owner keeps growing
      that rule set; never skip this pass and never ask whether to run it.
    - **External single-lens reviews** — codex (`gpt-5.6-luna`) and gemini
-     (`gemini-3.1-pro`, high effort), one lens each over the final diff.
+     (`gemini-3.1-pro`, high effort), one lens each over the final diff. These
+     are **shell commands, not agents**, which is why a review built out of
+     agent fan-outs silently omits them:
+
+     ```sh
+     codex exec --skip-git-repo-check "$PROMPT"
+     agy --model gemini-3.1-pro --effort high -p "$PROMPT"
+     ```
+
+     Wrap each in `timeout 900` on Linux. macOS ships no `timeout` and no
+     `gtimeout` without coreutils, so a hardcoded wrapper turns a working call
+     into `command not found` there.
+
+     **The Gemini client is called `agy`.** There is no `gemini` binary on any
+     of these machines, so `command -v gemini` reports it missing and the honest
+     conclusion — "gemini is not installed" — is wrong. Probe `agy`.
    At any phase, a finding that does not block the implementation goes to
    `plans/backlog/` with its severity recorded — the cycle does not stall on
    it, and nothing is silently dropped.
