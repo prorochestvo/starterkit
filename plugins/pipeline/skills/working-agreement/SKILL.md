@@ -42,23 +42,22 @@ carries only its delta (gate command, lens override, branching).
      its own sequential pass and its grooming is applied directly: the goal
      is code that reads as if the owner wrote it. The owner keeps growing
      that rule set; never skip this pass and never ask whether to run it.
-   - **External single-lens reviews** — codex (`gpt-5.6-luna`) and gemini
-     (`gemini-3.1-pro`, high effort), one lens each over the final diff. These
-     are **shell commands, not agents**, which is why a review built out of
-     agent fan-outs silently omits them:
+   - **External review, only when something blocks.** A finding that would
+     block is not settled inside one model family: state your own position,
+     then run the owner's wrapper, which assembles the material and merges the
+     outside verdicts into one ranked report.
 
      ```sh
-     codex exec --skip-git-repo-check "$PROMPT"
-     agy --model gemini-3.1-pro --effort high -p "$PROMPT"
+     ~/.claude/bin/second-opinion.sh --target branch --question '<the finding>'
      ```
 
-     Wrap each in `timeout 900` on Linux. macOS ships no `timeout` and no
-     `gtimeout` without coreutils, so a hardcoded wrapper turns a working call
-     into `command not found` there.
-
-     **The Gemini client is called `agy`.** There is no `gemini` binary on any
-     of these machines, so `command -v gemini` reports it missing and the honest
-     conclusion — "gemini is not installed" — is wrong. Probe `agy`.
+     `--target` also takes `working`, `staged`, `commit:REF`, `files:A,B,C`;
+     `--help` carries the rest. It drives `agy` (the Gemini client - there is no
+     `gemini` binary on these machines) and optionally OpenRouter. **No blocker,
+     no external call**: a cycle with nothing to escalate must not spend a paid
+     quota.
+     Agreement settles it and the cycle continues; only a failed consensus
+     reaches the owner, with each position stated.
    At any phase, a finding that does not block the implementation goes to
    `plans/backlog/` with its severity recorded — the cycle does not stall on
    it, and nothing is silently dropped.
