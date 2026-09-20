@@ -153,9 +153,28 @@ captured the moment they surface — one file, then back to the task. The
 backlog exists so a passing thought neither derails the current work nor
 evaporates.
 
-One question per file, named like completed plans — date raised plus the
-next free index across the directory: `plans/backlog/YYMMDD.NNNN.slug.md`
-(indexes are never reused, dropped files keep theirs). File form:
+One question per file, named date raised, **provisional priority**, then the
+next free index across the directory:
+
+```
+plans/backlog/YYMMDD.P.NNNN.slug.md     e.g. 260920.H.0012.usage-cache-is-shared.md
+```
+
+`P` is `H`, `M` or `L` — H for correctness, security, data loss or something
+already breaking; M for a real defect or gap that is not urgent; L for cleanup,
+consistency and nice-to-have. Indexes are never reused and count across both
+this shape and the older `YYMMDD.NNNN` one, so an existing backlog keeps its
+numbering. Get the name from:
+
+```sh
+~/.claude/bin/backlog-triage.sh --name -t '<title>' -p H -d plans/backlog
+```
+
+**The priority at capture is yours to set, not a model's.** Capture is the one
+moment that must stay instant — one file, then back to the task — and a model
+call there trades that property for an opinion nothing yet depends on. Judge it
+yourself and move on; it is provisional and gets checked before the entry
+becomes work. File form:
 
 ```markdown
 # <short imperative title>
@@ -168,13 +187,45 @@ whatever context a cold reader needs to judge it.>
 ```
 
 Review findings deferred out of a cycle land here too, with their severity
-on the `raised:` line.
+on the `raised:` line and mapped onto the filename's priority: P0/P1 → `H`,
+P2 → `M`, P3 → `L`.
 
 Triage happens when the owner asks ("разберём беклог", "triage the backlog")
 or when picking work with no instruction: every reviewed file gets an
 explicit decision on its `decision:` line — `accepted` or `dropped —
 <one-line reason> (<date>)`. Never resolve an entry silently, and never turn
 triage into one question per item — batch it.
+
+### Assessment, before an entry becomes work
+
+**An entry is assessed by a model outside this family before it is accepted**,
+never at capture. This is the moment the answer changes something, and by then
+the file carries the context a cold judgement needs:
+
+```sh
+~/.claude/bin/backlog-triage.sh --assess -f plans/backlog/<entry>.md
+```
+
+It returns `worth`, a `priority`, a `reason`, and `rename_to` when the priority
+moved. Apply it:
+
+- `worth: false` → the entry is **dropped with the returned reason**, not
+  deleted, and keeps its name. A rejected entry never becomes work, so its
+  priority stops mattering.
+- `worth: true` → adopt the returned priority. If `rename_to` is set, rename
+  with `git mv` in the same commit that creates the plan, keeping the index.
+- `assessed_by: none` → no reviewer answered. **Proceed anyway** at the existing
+  priority and say so. An outage must never park a question indefinitely.
+
+The cheap lane answers by default because "is this real, and how urgent" is
+classification with a checkable answer; the paid clients are called only when it
+reports `H` or when nothing answered. A disagreement on urgency resolves
+**upward** — under-rating a real defect costs more than looking at an `M` that
+turned out to be an `L`.
+
+*Reversing this:* drop the `--assess` call and accept entries on the priority
+set at capture. The split exists because putting the model call at capture cost
+60+ seconds and a paid quota per entry, several per cycle.
 
 The backlog is a tracker, not an archive, so the two decisions end
 differently:
