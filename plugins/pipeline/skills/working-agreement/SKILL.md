@@ -96,6 +96,13 @@ their own contexts, so a main-thread compaction never kills them.
 catalog; high is the review tier. Test diagnosis is judgment work, hence
 testdoctor rides the reviewer tier.)
 
+**A role's model is fixed; never downgrade it on your own.** A stage that
+stalls or times out is retried on the same model with a tighter brief:
+write the output file's skeleton first, read in ranges, save after each
+section, scope the question. If a cheaper model still looks necessary, that
+is the owner's call, asked explicitly — not a `model:` override mentioned in
+passing.
+
 The two external lenses sit at deliberately different tiers because their
 plans behave differently. Gemini runs at its top tier: measured over the
 week to 2026-09-13 the Pro plan stood at 1% of its weekly allowance, so the
