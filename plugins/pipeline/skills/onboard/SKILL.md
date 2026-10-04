@@ -118,7 +118,7 @@ rename; never assume the full set, never let one missing path abort the run.
 ## 8. Other machines (report)
 
 Machine-local state does not travel with the repo. For every other machine that
-works with this project (laptop, Raspberry Pi, servers), the punch list must name
+works with this project (laptop, dev VPS, servers), the punch list must name
 the per-machine steps:
 
 - `git pull` the migrated branch.
