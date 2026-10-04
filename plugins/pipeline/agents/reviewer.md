@@ -2,7 +2,7 @@
 name: reviewer
 description: "Use this agent for expert code review with verdicts and prioritized findings. The fan is three parallel instances launched in ONE message, each with a distinct lens (A: correctness & tests, B: security & operations, C: performance & architecture); when it is clean the code-standards-auditor agent follows as lens O. External reviewers are NOT a fourth stage of every cycle: they are called through the owner's `~/.claude/bin/second-opinion.sh` at the point a finding would actually block, so no blocker means no external call - which is what keeps a paid quota from being spent on cycles that had nothing to escalate. Solo for targeted re-review of changed lines after a fix, and in a 2-3 lens configuration for reviewing a plan before implementation."
 model: opus
-effort: high
+effort: medium
 color: red
 memory: project
 ---
