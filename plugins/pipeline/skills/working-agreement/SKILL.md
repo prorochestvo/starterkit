@@ -11,27 +11,29 @@ carries only its delta (gate command, lens override, branching).
 
 ## The pipeline
 
-1. **Plan** — the `architect` agent (opus, high effort) writes
+1. **Plan** — the `architect` agent (opus, medium effort) writes
    `plans/NNN-slug.md` (create via the `pipeline:new-plan` skill). No source
    edits before a plan exists. The plan must be executable without waiting on
    the owner: take every decision it needs, and record each one with its
    reasoning and its reversal path. When the plan is ready and holds no open
    implementation questions, the plan itself is reviewed, in two rounds:
-   - **Claude plan review** — 2-3 `reviewer` lenses (opus, high) over the
+   - **Claude plan review** — 2-3 `reviewer` lenses (opus, medium) over the
      plan; findings go back to the architect and the cycle repeats until the
      plan is approved.
    - **External plan review** — one general lens from gemini
      (`gemini-3.1-pro`, high effort) via the `gemini` skill. Fold its
      recommendations in, or record in the plan why one was rejected.
-2. **Code** — the `engineer` agent (sonnet, medium effort) executes the
-   plan's tasks with tests. Side tasks and nuances that do not block the work
+2. **Code** — the `engineer` agent (haiku, medium effort) executes the
+   plan's tasks with tests: Codex (`gpt-6-luna`, medium reasoning) writes the
+   code, the engineer verifies and gates it, and writes it itself only when
+   Codex is out of quota. Side tasks and nuances that do not block the work
    go to `plans/backlog/` — one file each — and the cycle moves on. A genuine
    blocker is resolved collectively (see **Blocking decisions**), not by
    stopping for the owner. The project's gate must be green before review; a
    red tree goes to the `testdoctor` agent first, at any stage. Chain gate
    and commit with `&&`, never `;`.
 3. **Review** — three phases, in order:
-   - **Claude fan** — `reviewer` agents (opus, high) launched in parallel in
+   - **Claude fan** — `reviewer` agents (opus, medium) launched in parallel in
      ONE message, each prompt naming its lens and the changed files
      (standard: A correctness & tests, B security & operations,
      C performance & architecture). **P0 findings are fixed immediately,
@@ -87,11 +89,14 @@ their own contexts, so a main-thread compaction never kills them.
 
 | Role | Claude | Gemini | Codex |
 |---|---|---|---|
-| architect / plan review | opus + high | `gemini-3.1-pro` + high | — |
-| engineer | sonnet + medium | — | — |
-| reviewer | opus + high | `gemini-3.1-pro` + high | `gpt-5.6-luna` |
-| testdoctor | opus + high | — | — |
+| architect / plan review | opus + medium | `gemini-3.1-pro` + high | — |
+| engineer | haiku + medium (drives Codex; writes only as fallback) | — | `gpt-6-luna` + medium (writes the code) |
+| reviewer | opus + medium | `gemini-3.1-pro` + high | `gpt-6-luna` |
+| testdoctor | opus + medium | — | — |
 
+Medium is the default effort for every Claude role: the owner's call on
+2026-10-04, trading depth per call for headroom across the whole cycle. Raise
+one role in its agent frontmatter when a project needs it.
 (`gemini-3.1-pro` offers only low/high effort — verified against the agy
 catalog; high is the review tier. Test diagnosis is judgment work, hence
 testdoctor rides the reviewer tier.)
@@ -101,17 +106,21 @@ stalls or times out is retried on the same model with a tighter brief:
 write the output file's skeleton first, read in ranges, save after each
 section, scope the question. If a cheaper model still looks necessary, that
 is the owner's call, asked explicitly — not a `model:` override mentioned in
-passing.
+passing. The engineer's Codex-to-haiku fallback is the one exception, and it
+is not a choice made on the fly: it is defined above and fires only when the
+Codex quota is out.
 
 The two external lenses sit at deliberately different tiers because their
 plans behave differently. Gemini runs at its top tier: measured over the
 week to 2026-09-13 the Pro plan stood at 1% of its weekly allowance, so the
 cheap tier was bought with quality for a constraint that does not exist.
-Codex stays at its cheapest tier: the same week its weekly allowance was
-exhausted on the first day. That reading may be polluted by free-tier usage
-counted after the licence was bought, so it is being observed rather than
-trusted - raise codex to `gpt-6-astra` with high reasoning effort once a
-clean week confirms headroom.
+Codex stays at its cheapest tier, and since 2026-10-04 it also writes the
+code, so implementation spends the same weekly allowance as the external
+lens. Haiku is the fallback that keeps implementation moving when that
+allowance runs out; check it with `~/.claude/bin/codex-limits.py`. The
+week of 2026-09-13 showed the allowance exhausted on day one, a reading
+possibly polluted by free-tier usage; as of 2026-10-04 the weekly window
+stood at 2% used.
 
 Gemini and codex are reached through the `gemini` and `codex` skills
 (headless CLIs). They see nothing of the session: every call carries
