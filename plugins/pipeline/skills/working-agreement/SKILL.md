@@ -25,8 +25,9 @@ carries only its delta (gate command, lens override, branching).
      recommendations in, or record in the plan why one was rejected.
 2. **Code** — the `engineer` agent (haiku, medium effort) executes the
    plan's tasks with tests: Codex (`gpt-6-luna`, medium reasoning) writes the
-   code, the engineer verifies and gates it, and writes it itself only when
-   Codex is out of quota. Side tasks and nuances that do not block the work
+   code, the engineer verifies and gates it. When the Codex plan is out of
+   quota the same model runs through OpenRouter; the engineer writes the
+   code itself only when that lane is down too. Side tasks and nuances that do not block the work
    go to `plans/backlog/` — one file each — and the cycle moves on. A genuine
    blocker is resolved collectively (see **Blocking decisions**), not by
    stopping for the owner. The project's gate must be green before review; a
@@ -90,7 +91,7 @@ their own contexts, so a main-thread compaction never kills them.
 | Role | Claude | Gemini | Codex |
 |---|---|---|---|
 | architect / plan review | opus + medium | `gemini-3.1-pro` + high | — |
-| engineer | haiku + medium (drives Codex; writes only as fallback) | — | `gpt-6-luna` + medium (writes the code) |
+| engineer | haiku + medium (drives Codex; writes only as last fallback) | — | `gpt-6-luna` + medium (writes the code; via OpenRouter when the plan is out) |
 | reviewer | opus + medium | `gemini-3.1-pro` + high | `gpt-6-luna` |
 | testdoctor | opus + medium | — | — |
 
@@ -106,9 +107,9 @@ stalls or times out is retried on the same model with a tighter brief:
 write the output file's skeleton first, read in ranges, save after each
 section, scope the question. If a cheaper model still looks necessary, that
 is the owner's call, asked explicitly — not a `model:` override mentioned in
-passing. The engineer's Codex-to-haiku fallback is the one exception, and it
-is not a choice made on the fly: it is defined above and fires only when the
-Codex quota is out.
+passing. The engineer's fallback chain is the one exception, and it is not
+a choice made on the fly: Codex over OpenRouter keeps the same model when
+the plan quota is out, and haiku writes only when OpenRouter is down too.
 
 The two external lenses sit at deliberately different tiers because their
 plans behave differently. Gemini runs at its top tier: measured over the
@@ -116,8 +117,10 @@ week to 2026-09-13 the Pro plan stood at 1% of its weekly allowance, so the
 cheap tier was bought with quality for a constraint that does not exist.
 Codex stays at its cheapest tier, and since 2026-10-04 it also writes the
 code, so implementation spends the same weekly allowance as the external
-lens. Haiku is the fallback that keeps implementation moving when that
-allowance runs out; check it with `~/.claude/bin/codex-limits.py`. The
+lens. When that allowance runs out, the same `gpt-6-luna` keeps writing
+through OpenRouter (pay-per-token, about a cent per small task, under the
+key's $5 monthly cap); haiku is the last resort behind it. Check the plan
+with `~/.claude/bin/codex-limits.py`. The
 week of 2026-09-13 showed the allowance exhausted on day one, a reading
 possibly polluted by free-tier usage; as of 2026-10-04 the weekly window
 stood at 2% used.
