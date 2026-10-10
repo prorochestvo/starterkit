@@ -199,7 +199,7 @@ this shape and the older `YYMMDD.NNNN` one, so an existing backlog keeps its
 numbering. Get the name from:
 
 ```sh
-~/.claude/bin/backlog-triage.sh --name -t '<title>' -p H -d .agents/plans/backlog
+~/.claude/bin/backlog-triage.sh --name -t '<title>' -p H # run from the repo root; the script picks the backlog dir
 ```
 
 **The priority at capture is yours to set, not a model's.** Capture is the one

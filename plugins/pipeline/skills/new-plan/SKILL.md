@@ -12,7 +12,7 @@ Steps:
 1. Validate that `$ARGUMENTS` is non-empty and kebab-case (lowercase letters, digits, hyphens). If not, stop and ask for a valid slug. The slug must describe intent (`add-rate-limiting`, not `task`).
 2. Determine the next plan number `NNN`:
    - List `.agents/plans/*.md`, `.agents/plans/completed/*.md`, `.agents/plans/history/*.md`.
-   - Take the highest `NNN` across `NNN-*.md` files in `.agents/plans/` and `.agents/plans/history/`, increment by 1, zero-pad to 3 digits. Start at `001` if none exist.
+   - Take the highest plan number across `NNN-*.md` in `.agents/plans/` and `.agents/plans/history/` and the `NNNN` of `YYMMDD.NNNN.slug.md` in `.agents/plans/completed/` (a completed plan keeps its number), increment by 1, zero-pad to 3 digits. Start at `001` if none exist.
 3. Write `.agents/plans/NNN-$ARGUMENTS.md` with this template:
 
 ```markdown
