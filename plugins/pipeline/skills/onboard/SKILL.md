@@ -74,7 +74,10 @@ rename; never assume the full set, never let one missing path abort the run.
   ln -s ../.agents/skills .claude/skills`, then re-point `.claude/skills/` path
   references to `.agents/skills/`; both a real `.claude/skills/` and a non-empty
   `.agents/skills/` → stop, merging them is the owner's call. Make sure the
-  `.gitignore` policy lets `.claude/skills` and `.agents/skills/` through.
+  `.gitignore` policy lets `.agents/skills/` and the link through: git sees the link as
+  a file, so under `.claude/*` it needs `!.claude/skills` without the trailing slash
+  (`!.claude/skills/` re-includes only a directory and silently drops the link).
+  Confirm with `git ls-files -s .claude/skills` showing mode `120000`.
 
 ## 4. AGENTS.md shape (judgment)
 
