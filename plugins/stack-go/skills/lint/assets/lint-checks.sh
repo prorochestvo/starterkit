@@ -33,7 +33,7 @@ fi
 # leak. The rest of .claude/ is hand-authored and stays under the rule.
 if hits=$(grep -rnE '(plans/[0-9]{3}-|PLAN-[0-9]+|task #[0-9]+)' \
 	--include='*.go' --include='*.sql' --include='*.md' \
-	--exclude-dir=plans --exclude-dir=.git --exclude-dir=agent-memory \
+	--exclude-dir=plans --exclude-dir=.agents --exclude-dir=.git --exclude-dir=agent-memory \
 	--exclude-dir=logs --exclude-dir=tmp --exclude-dir=build --exclude-dir=backups \
 	. 2>/dev/null); then
 	report "plan or task references outside .agents/plans/ (write the reason, not the ticket):"

@@ -82,11 +82,17 @@ open(out, "a").write("\n")
 PY
 echo "  + .claude/settings.json (marketplace wiring + canonical permissions)"
 
-for dir in plans/completed plans/history plans/backlog specs scripts; do
-  mkdir -p "$TARGET/.agents/$dir"
-  touch "$TARGET/.agents/$dir/.gitkeep"
-done
-echo "  + .agents/ (plans/{completed,history,backlog}, specs, scripts)"
+# A legacy root plans/ is left for onboard to move with history; a fresh
+# .agents/plans/ next to it would start a second, colliding numbering.
+if [ -d "$TARGET/plans" ]; then
+  echo "  ! legacy plans/ found: run /pipeline:onboard to move it to .agents/plans/"
+else
+  for dir in plans/completed plans/history plans/backlog specs scripts; do
+    mkdir -p "$TARGET/.agents/$dir"
+    touch "$TARGET/.agents/$dir/.gitkeep"
+  done
+  echo "  + .agents/ (plans/{completed,history,backlog}, specs, scripts)"
+fi
 
 cat <<EOF
 

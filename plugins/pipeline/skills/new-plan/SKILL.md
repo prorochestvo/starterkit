@@ -8,6 +8,7 @@ Create a new plan file in `.agents/plans/` for the slug `$ARGUMENTS`.
 
 Steps:
 
+0. If a root `plans/` directory exists, stop: the project is not migrated yet, and a plan written to `.agents/plans/` would restart the numbering. Run `pipeline:onboard` first.
 1. Validate that `$ARGUMENTS` is non-empty and kebab-case (lowercase letters, digits, hyphens). If not, stop and ask for a valid slug. The slug must describe intent (`add-rate-limiting`, not `task`).
 2. Determine the next plan number `NNN`:
    - List `.agents/plans/*.md`, `.agents/plans/completed/*.md`, `.agents/plans/history/*.md`.

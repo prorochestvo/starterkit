@@ -8,6 +8,7 @@ Move the active plan identified by `$ARGUMENTS` from `.agents/plans/` to `.agent
 
 Steps:
 
+0. If a root `plans/` directory exists, stop: the project is not migrated yet, and a plan written to `.agents/plans/` would restart the numbering. Run `pipeline:onboard` first.
 1. Resolve the source file:
    - `NNN` (3 digits) → the unique `.agents/plans/NNN-*.md` matching it.
    - A slug → `.agents/plans/*-$ARGUMENTS.md`.
