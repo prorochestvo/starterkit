@@ -1,6 +1,6 @@
 ---
 name: onboard
-description: Verify and finish wiring a project into the starterkit - fresh install after install.sh or migration of an existing project. Checks marketplace wiring, permissions, legacy agents/commands, CLAUDE.md shape, plans layout, agent memory, and gitignore; fixes the mechanical parts, reports what needs a human call.
+description: Verify and finish wiring a project into the starterkit - fresh install after install.sh or migration of an existing project. Checks marketplace wiring, permissions, legacy agents/commands, AGENTS.md shape, plans layout, agent memory, and gitignore; fixes the mechanical parts, reports what needs a human call.
 ---
 
 Run the onboarding checklist below against this project. **Fix mechanical items
@@ -70,7 +70,9 @@ rename; never assume the full set, never let one missing path abort the run.
 - **Project-local skills are residents, not legacy** — keep them. They live in
   `.agents/skills/`, and `.claude/skills` is a committed relative symlink to
   `../.agents/skills` so Claude Code still finds them. A real `.claude/skills/`
-  directory → `mkdir -p .agents && git mv .claude/skills .agents/skills &&
+  directory → if `.agents/skills/` holds nothing but `.gitkeep`, remove it entirely
+  (`git rm -r`, or `rm -r` when untracked) so `git mv` does not nest; then
+  `mkdir -p .agents && git mv .claude/skills .agents/skills &&
   ln -s ../.agents/skills .claude/skills`, then re-point `.claude/skills/` path
   references to `.agents/skills/`; both a real `.claude/skills/` and a non-empty
   `.agents/skills/` → stop, merging them is the owner's call. Make sure the
@@ -84,7 +86,9 @@ rename; never assume the full set, never let one missing path abort the run.
 - `AGENTS.md` is the regular file and `CLAUDE.md` a relative symlink to it
   (`CLAUDE.md -> AGENTS.md`), so Codex and Claude Code read one source. Mechanical fix:
   only `CLAUDE.md` exists → `git mv CLAUDE.md AGENTS.md && ln -s AGENTS.md CLAUDE.md`;
-  only `AGENTS.md` → add the link; both are regular files → identical: replace
+  only `AGENTS.md` → add the link; `AGENTS.md` is a link to `CLAUDE.md` →
+  `git rm -q AGENTS.md && git mv CLAUDE.md AGENTS.md && ln -s AGENTS.md CLAUDE.md`;
+  both are regular files → identical: replace
   `CLAUDE.md` with the link; different: stop and show the diff, merging them is the
   owner's call. Commit this alone, apart from any content edit.
 - No unfilled `<...>` placeholders (fresh install: walk the user through
@@ -117,7 +121,9 @@ rename; never assume the full set, never let one missing path abort the run.
   2. **Re-point.** Rewrite `plans/` path references in `CLAUDE.md`/`AGENTS.md`,
      `.claude/`, and `.agents/` itself to `.agents/plans/`, and commit that separately.
 - `.agents/plans/`, `.agents/plans/completed/`, `.agents/plans/history/`,
-  `.agents/plans/backlog/`, `.agents/specs/`, `.agents/scripts/` exist (create with `.gitkeep`).
+  `.agents/plans/backlog/`, `.agents/specs/`, `.agents/scripts/`, `.agents/skills/` exist
+  (create with `.gitkeep`), and `.claude/skills` is the link to `../.agents/skills`
+  (absent → `ln -s ../.agents/skills .claude/skills`).
 - Stale active plans (`.agents/plans/NNN-*.md` for work that shipped or died) → ⚠️ list them;
   completed → `pipeline:complete-plan`, abandoned → `.agents/plans/history/`.
 

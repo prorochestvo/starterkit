@@ -63,8 +63,10 @@ echo "Scaffolding $STACK project in $TARGET ..."
 
 # One instruction file for every agent: Codex reads AGENTS.md, Claude Code
 # reads CLAUDE.md, and the link keeps the two from drifting apart.
+# Remove both first: under --force an AGENTS.md -> CLAUDE.md link would make
+# cp write through it and the new link would close a loop.
+rm -f "$TARGET/AGENTS.md" "$TARGET/CLAUDE.md"
 cp "$SRC/AGENTS.md" "$TARGET/AGENTS.md"
-rm -f "$TARGET/CLAUDE.md"
 ln -s AGENTS.md "$TARGET/CLAUDE.md"
 echo "  + AGENTS.md, CLAUDE.md -> AGENTS.md"
 
@@ -93,13 +95,21 @@ echo "  + .claude/settings.json (marketplace wiring + canonical permissions)"
 if [ -d "$TARGET/plans" ]; then
   echo "  ! legacy plans/ found: run /pipeline:onboard to move it to .agents/plans/"
 else
-  for dir in plans/completed plans/history plans/backlog specs scripts skills; do
+  for dir in plans/completed plans/history plans/backlog specs scripts; do
     mkdir -p "$TARGET/.agents/$dir"
     touch "$TARGET/.agents/$dir/.gitkeep"
   done
-  mkdir -p "$TARGET/.claude"
-  [ -e "$TARGET/.claude/skills" ] || ln -s ../.agents/skills "$TARGET/.claude/skills"
-  echo "  + .agents/ (plans/{completed,history,backlog}, specs, scripts, skills), .claude/skills -> ../.agents/skills"
+  echo "  + .agents/ (plans/{completed,history,backlog}, specs, scripts)"
+fi
+# A real .claude/skills/ is moved by onboard with history; an empty
+# .agents/skills/ beside it would only make that move stop.
+if [ -e "$TARGET/.claude/skills" ] && [ ! -L "$TARGET/.claude/skills" ]; then
+  echo "  ! real .claude/skills/ found: run /pipeline:onboard to move it to .agents/skills/"
+elif [ ! -e "$TARGET/.claude/skills" ]; then
+  mkdir -p "$TARGET/.agents/skills" "$TARGET/.claude"
+  touch "$TARGET/.agents/skills/.gitkeep"
+  ln -s ../.agents/skills "$TARGET/.claude/skills"
+  echo "  + .agents/skills/, .claude/skills -> ../.agents/skills"
 fi
 
 cat <<EOF
