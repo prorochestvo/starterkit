@@ -171,8 +171,8 @@ Every project keeps its agent-facing material under one root, `.agents/`:
 | `.agents/specs/` | agent-readable specs: contracts, conventions, runbooks an agent follows |
 | `.agents/scripts/` | scripts written for or by agents: owner-action handoffs, one-off migrations, probes |
 
-Human documentation stays in `docs/`; agent instructions stay in `AGENTS.md` /
-`CLAUDE.md` at the root and skills in `.claude/skills/`. A project still on a
+Human documentation stays in `docs/`; agent instructions stay in `AGENTS.md` at the
+root, with `CLAUDE.md` a symlink to it, and skills in `.claude/skills/`. A project still on a
 root `plans/` tree is migrated by `pipeline:onboard`.
 
 One plan per concern. A plan's own Status line and its position in `.agents/plans/` are both

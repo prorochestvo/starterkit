@@ -31,7 +31,7 @@ context until they are relevant.
 
 This copies two files and creates one directory — everything else arrives via plugins:
 
-- `CLAUDE.md` — a thin template holding only project facts (what it is, layers,
+- `AGENTS.md` (with `CLAUDE.md` linking to it) — a thin template holding only project facts (what it is, layers,
   routes, env vars, deps) and the pipeline working agreement.
 - `.claude/settings.json` — the stack's permission allowlist plus the marketplace
   wiring (`extraKnownMarketplaces` + `enabledPlugins`).

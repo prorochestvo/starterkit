@@ -70,9 +70,15 @@ rename; never assume the full set, never let one missing path abort the run.
 - **Project-local `.claude/skills/` are residents, not legacy** — keep them, make
   sure the `.gitignore` policy whitelists `!.claude/skills/`.
 
-## 4. CLAUDE.md shape (judgment)
+## 4. AGENTS.md shape (judgment)
 
-- Exists; no unfilled `<...>` placeholders (fresh install: walk the user through
+- `AGENTS.md` is the regular file and `CLAUDE.md` a relative symlink to it
+  (`CLAUDE.md -> AGENTS.md`), so Codex and Claude Code read one source. Mechanical fix:
+  only `CLAUDE.md` exists → `git mv CLAUDE.md AGENTS.md && ln -s AGENTS.md CLAUDE.md`;
+  only `AGENTS.md` → add the link; both are regular files → identical: replace
+  `CLAUDE.md` with the link; different: stop and show the diff, merging them is the
+  owner's call. Commit this alone, apart from any content edit.
+- No unfilled `<...>` placeholders (fresh install: walk the user through
   filling them from the actual repo — versions, layers, routes, env vars, deps).
 - No sections restating stack-plugin conventions (test structure, declaration order,
   error-contract boilerplate, code organization, godoc rules) → recommend replacing

@@ -40,7 +40,7 @@ You are a senior software engineer. Your role is **implementation only** — cle
      -o "$TMPDIR/codex-out.txt" > "$TMPDIR/codex.log" 2>&1
    ```
 
-   Run it with a Bash timeout of at least 600000 ms. Keep `-s workspace-write`; never `--dangerously-bypass-approvals-and-sandbox`. Codex reads `AGENTS.md`, not `CLAUDE.md`, and sees nothing of this session, so `$TASK` is self-contained: the plan task verbatim, the files to touch, the instruction to read `CLAUDE.md` and follow it, the stack's test layout, tests in the same change, and the boundaries — no commits, no network commands, no `.env`.
+   Run it with a Bash timeout of at least 600000 ms. Keep `-s workspace-write`; never `--dangerously-bypass-approvals-and-sandbox`. Codex reads `AGENTS.md` (a project's `CLAUDE.md` links to it; where it does not, Codex never sees `CLAUDE.md`) and nothing of this session, so `$TASK` is self-contained: the plan task verbatim, the files to touch, the instruction to read `CLAUDE.md` and follow it, the stack's test layout, tests in the same change, and the boundaries — no commits, no network commands, no `.env`.
 2. **Fallback 1: the same model through OpenRouter.** If `codex-limits.py` already said `LIMIT REACHED`, or Codex exits non-zero and `codex.log` shows a quota or rate limit (`usage limit`, `rate limit`, `429`, `Too Many Requests`) or a ChatGPT-plan auth failure, rerun the identical task through the OpenRouter provider — same harness, same `gpt-6-luna`, billed to the OpenRouter key instead of the plan:
 
    ```sh

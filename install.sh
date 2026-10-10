@@ -6,9 +6,9 @@
 #
 #   <stack>       — go | flutter
 #   <target-dir>  — destination project root (must exist)
-#   --force       — overwrite an existing CLAUDE.md / .claude/settings.json
+#   --force       — overwrite an existing AGENTS.md / CLAUDE.md / .claude/settings.json
 #
-# Copies the stack's CLAUDE.md template and .claude/settings.json (permission
+# Copies the stack's AGENTS.md template (CLAUDE.md links to it) and .claude/settings.json (permission
 # allowlist + starterkit marketplace wiring + enabled plugins) and creates the
 # .agents/ directory layout. Agents, skills, and doctrine are NOT copied — they
 # ship via the plugin marketplace and update centrally.
@@ -48,10 +48,12 @@ if [[ ! -d "$SRC" ]]; then
   exit 1
 fi
 
-if [[ -e "$TARGET/CLAUDE.md" && "$FORCE" != "--force" ]]; then
-  echo "error: '$TARGET/CLAUDE.md' already exists. Re-run with --force to overwrite." >&2
-  exit 1
-fi
+for f in AGENTS.md CLAUDE.md; do
+  if [[ -e "$TARGET/$f" || -L "$TARGET/$f" ]] && [[ "$FORCE" != "--force" ]]; then
+    echo "error: '$TARGET/$f' already exists. Re-run with --force to overwrite." >&2
+    exit 1
+  fi
+done
 if [[ -e "$TARGET/.claude/settings.json" && "$FORCE" != "--force" ]]; then
   echo "error: '$TARGET/.claude/settings.json' already exists. Re-run with --force to overwrite." >&2
   exit 1
@@ -59,8 +61,12 @@ fi
 
 echo "Scaffolding $STACK project in $TARGET ..."
 
-cp "$SRC/CLAUDE.md" "$TARGET/CLAUDE.md"
-echo "  + CLAUDE.md"
+# One instruction file for every agent: Codex reads AGENTS.md, Claude Code
+# reads CLAUDE.md, and the link keeps the two from drifting apart.
+cp "$SRC/AGENTS.md" "$TARGET/AGENTS.md"
+rm -f "$TARGET/CLAUDE.md"
+ln -s AGENTS.md "$TARGET/CLAUDE.md"
+echo "  + AGENTS.md, CLAUDE.md -> AGENTS.md"
 
 mkdir -p "$TARGET/.claude"
 # Assemble settings.json: wiring template + canonical permission fragments.
@@ -102,7 +108,7 @@ Done. Next steps:
      (If no prompt appears: /plugin marketplace add prorochestvo/starterkit
       then /plugin install pipeline@starterkit stack-$STACK@starterkit knowledge@starterkit)
   3. Run /pipeline:onboard — it verifies the wiring and walks you through
-     filling the CLAUDE.md placeholders.
+     filling the AGENTS.md placeholders.
   4. Use the pipeline:new-plan skill to create your first plan.
 
 Updating later: /plugin marketplace update starterkit — every project picks up
