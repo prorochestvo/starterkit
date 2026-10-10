@@ -93,11 +93,12 @@ rename; never assume the full set, never let one missing path abort the run.
 ## 5. `.agents/` layout (mechanical)
 
 - Legacy root `plans/` exists → migrate it, in two commits:
-  1. **Move.** If `.agents/plans/` holds nothing but `.gitkeep` files, delete those first;
-     if it holds anything else, stop and report both trees — merging two numbered trees
-     is the owner's call. Then `mkdir -p .agents && git mv plans .agents/plans` (a root
-     `plans/documentations/` goes to `.agents/specs/` instead). Commit the move alone, so
-     `git log --follow` keeps each file's history.
+  1. **Move.** If `.agents/plans/` holds nothing but `.gitkeep` files, remove it entirely
+     (`git rm -r`, or `rm -r` when untracked) — an empty directory left behind makes
+     `git mv` nest the tree; if it holds anything else, stop and report both trees, since
+     merging two numbered trees is the owner's call. Move a root `plans/documentations/`
+     to `.agents/specs/` first, then `mkdir -p .agents && git mv plans .agents/plans`.
+     Commit the moves alone, so `git log --follow` keeps each file's history.
   2. **Re-point.** Rewrite `plans/` path references in `CLAUDE.md`/`AGENTS.md`,
      `.claude/`, and `.agents/` itself to `.agents/plans/`, and commit that separately.
 - `.agents/plans/`, `.agents/plans/completed/`, `.agents/plans/history/`,
