@@ -67,8 +67,14 @@ rename; never assume the full set, never let one missing path abort the run.
   *role*, not knowledge + facts.
 - `.claude/commands/new-plan.md` / `complete-plan.md` → superseded by pipeline
   skills; recommend deletion.
-- **Project-local `.claude/skills/` are residents, not legacy** — keep them, make
-  sure the `.gitignore` policy whitelists `!.claude/skills/`.
+- **Project-local skills are residents, not legacy** — keep them. They live in
+  `.agents/skills/`, and `.claude/skills` is a committed relative symlink to
+  `../.agents/skills` so Claude Code still finds them. A real `.claude/skills/`
+  directory → `mkdir -p .agents && git mv .claude/skills .agents/skills &&
+  ln -s ../.agents/skills .claude/skills`, then re-point `.claude/skills/` path
+  references to `.agents/skills/`; both a real `.claude/skills/` and a non-empty
+  `.agents/skills/` → stop, merging them is the owner's call. Make sure the
+  `.gitignore` policy lets `.claude/skills` and `.agents/skills/` through.
 
 ## 4. AGENTS.md shape (judgment)
 

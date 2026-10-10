@@ -93,11 +93,13 @@ echo "  + .claude/settings.json (marketplace wiring + canonical permissions)"
 if [ -d "$TARGET/plans" ]; then
   echo "  ! legacy plans/ found: run /pipeline:onboard to move it to .agents/plans/"
 else
-  for dir in plans/completed plans/history plans/backlog specs scripts; do
+  for dir in plans/completed plans/history plans/backlog specs scripts skills; do
     mkdir -p "$TARGET/.agents/$dir"
     touch "$TARGET/.agents/$dir/.gitkeep"
   done
-  echo "  + .agents/ (plans/{completed,history,backlog}, specs, scripts)"
+  mkdir -p "$TARGET/.claude"
+  [ -e "$TARGET/.claude/skills" ] || ln -s ../.agents/skills "$TARGET/.claude/skills"
+  echo "  + .agents/ (plans/{completed,history,backlog}, specs, scripts, skills), .claude/skills -> ../.agents/skills"
 fi
 
 cat <<EOF
