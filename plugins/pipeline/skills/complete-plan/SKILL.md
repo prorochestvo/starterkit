@@ -1,16 +1,16 @@
 ---
 name: complete-plan
-description: Move a finished plan from plans/ to plans/completed/ with the YYMMDD.NNNN.slug.md naming, after verifying the project's test and lint gates pass. Use when all acceptance criteria of an active plan are met.
+description: Move a finished plan from .agents/plans/ to .agents/plans/completed/ with the YYMMDD.NNNN.slug.md naming, after verifying the project's test and lint gates pass. Use when all acceptance criteria of an active plan are met.
 argument-hint: <NNN | slug | NNN-slug.md>
 ---
 
-Move the active plan identified by `$ARGUMENTS` from `plans/` to `plans/completed/`.
+Move the active plan identified by `$ARGUMENTS` from `.agents/plans/` to `.agents/plans/completed/`.
 
 Steps:
 
 1. Resolve the source file:
-   - `NNN` (3 digits) → the unique `plans/NNN-*.md` matching it.
-   - A slug → `plans/*-$ARGUMENTS.md`.
+   - `NNN` (3 digits) → the unique `.agents/plans/NNN-*.md` matching it.
+   - A slug → `.agents/plans/*-$ARGUMENTS.md`.
    - A full filename → use directly.
    - Zero or multiple matches → stop and ask the user to disambiguate.
 2. **Verify completion gates.** Run the project's test and lint commands as documented in the project's `CLAUDE.md` (e.g. `make test`, `flutter analyze && flutter test`). If `CLAUDE.md` does not document them, ask the user rather than guessing. If anything fails, stop and report — do **not** move the file.
@@ -19,10 +19,10 @@ Steps:
    - `YYMMDD` = today's date in UTC (`date -u +%y%m%d`).
    - `NNNN` = **the plan's own number**, zero-padded to four digits — `007-foo.md` → `0007`. A plan whose source filename carries no number takes `0000`.
    - `slug` = the slug portion of the source filename (after the `NNN-` prefix).
-   - Destination: `plans/completed/$YYMMDD.$NNNN.$slug.md`.
+   - Destination: `.agents/plans/completed/$YYMMDD.$NNNN.$slug.md`.
    - **If that path already exists, stop and ask.** Two plans cannot share a number, so a collision means the source was already completed under another name, or a number was reused.
 5. Run `git mv <source> <destination>` so history is preserved.
-6. **Re-point the citations.** A plan is cited by number — from other plans, from a `plans/README.md` index, from decision records, from commit bodies. Grep the repository for the number and update anything that describes it as active. If the project has a check for dangling plan references, run it.
+6. **Re-point the citations.** A plan is cited by number — from other plans, from a `.agents/plans/README.md` index, from decision records, from commit bodies. Grep the repository for the number and update anything that describes it as active. If the project has a check for dangling plan references, run it.
 7. Report the move and the new path.
 
 Do not refactor or alter the plan's contents during the move. Anything the plan
@@ -50,6 +50,6 @@ A plan number is unique per repository by construction, so it needs no scan, and
 it is the string a reader already has in hand.
 
 **What would reverse this:** a project that numbers plans non-uniquely, or one
-that reuses numbers across a `plans/history/` archive. Neither exists today; the
+that reuses numbers across a `.agents/plans/history/` archive. Neither exists today; the
 first one to appear is the argument for going back to a counter, and it would
 need the collision guard in step 4 either way.

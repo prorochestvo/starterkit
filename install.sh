@@ -10,7 +10,7 @@
 #
 # Copies the stack's CLAUDE.md template and .claude/settings.json (permission
 # allowlist + starterkit marketplace wiring + enabled plugins) and creates the
-# plans/ directory layout. Agents, skills, and doctrine are NOT copied — they
+# .agents/ directory layout. Agents, skills, and doctrine are NOT copied — they
 # ship via the plugin marketplace and update centrally.
 
 set -euo pipefail
@@ -82,9 +82,11 @@ open(out, "a").write("\n")
 PY
 echo "  + .claude/settings.json (marketplace wiring + canonical permissions)"
 
-mkdir -p "$TARGET/plans/completed" "$TARGET/plans/history"
-touch "$TARGET/plans/completed/.gitkeep" "$TARGET/plans/history/.gitkeep"
-echo "  + plans/ (active, completed/, history/)"
+for dir in plans/completed plans/history plans/backlog specs scripts; do
+  mkdir -p "$TARGET/.agents/$dir"
+  touch "$TARGET/.agents/$dir/.gitkeep"
+done
+echo "  + .agents/ (plans/{completed,history,backlog}, specs, scripts)"
 
 cat <<EOF
 

@@ -1,6 +1,6 @@
 ---
 name: working-agreement
-description: The canonical plan-first pipeline - plan with its own review cycle (Claude lenses, then gemini/codex), implement, gate, staged review (Claude fan, author-standards pass, external single-lens reviews), one-commit completion with cleanup - plus the plans/ layout, the project backlog (plans/backlog/), per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a plans/NNN-slug.md, recording or triaging a side-question in plans/backlog/, invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many review lenses to run.
+description: The canonical plan-first pipeline - plan with its own review cycle (Claude lenses, then gemini/codex), implement, gate, staged review (Claude fan, author-standards pass, external single-lens reviews), one-commit completion with cleanup - plus the .agents/plans/ layout, the project backlog (.agents/plans/backlog/), per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/NNN-slug.md, recording or triaging a side-question in .agents/plans/backlog/, invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many review lenses to run.
 ---
 
 # Working agreement
@@ -12,7 +12,7 @@ carries only its delta (gate command, lens override, branching).
 ## The pipeline
 
 1. **Plan** — the `architect` agent (opus, medium effort) writes
-   `plans/NNN-slug.md` (create via the `pipeline:new-plan` skill). No source
+   `.agents/plans/NNN-slug.md` (create via the `pipeline:new-plan` skill). No source
    edits before a plan exists. The plan must be executable without waiting on
    the owner: take every decision it needs, and record each one with its
    reasoning and its reversal path. When the plan is ready and holds no open
@@ -28,7 +28,7 @@ carries only its delta (gate command, lens override, branching).
    code, the engineer verifies and gates it. When the Codex plan is out of
    quota the same model runs through OpenRouter; the engineer writes the
    code itself only when that lane is down too. Side tasks and nuances that do not block the work
-   go to `plans/backlog/` — one file each — and the cycle moves on. A genuine
+   go to `.agents/plans/backlog/` — one file each — and the cycle moves on. A genuine
    blocker is resolved collectively (see **Blocking decisions**), not by
    stopping for the owner. The project's gate must be green before review; a
    red tree goes to the `testdoctor` agent first, at any stage. Chain gate
@@ -62,7 +62,7 @@ carries only its delta (gate command, lens override, branching).
      Agreement settles it and the cycle continues; only a failed consensus
      reaches the owner, with each position stated.
    At any phase, a finding that does not block the implementation goes to
-   `plans/backlog/` with its severity recorded — the cycle does not stall on
+   `.agents/plans/backlog/` with its severity recorded — the cycle does not stall on
    it, and nothing is silently dropped.
 4. **Commit** — the cycle ends in a commit: one commit per plan and linear
    history is the canonical shape — depart from it only when atomicity
@@ -158,14 +158,27 @@ of P0-P3. Grading a real P0 down to avoid fixing it is the failure mode to
 watch for in yourself. The author-standards pass is the exception to the
 backlog default: its grooming is applied in-cycle — that is its purpose.
 
-## Where plans live
+## The `.agents/` tree
 
-Plans live in `plans/` (active), `plans/completed/` (shipped,
-`YYMMDD.NNNN.slug.md`), `plans/history/` (abandoned/superseded). One plan per
-concern. A plan's own Status line and its position in `plans/` are both
+Every project keeps its agent-facing material under one root, `.agents/`:
+
+| Path | Holds |
+|---|---|
+| `.agents/plans/` | active plans, `NNN-slug.md` |
+| `.agents/plans/completed/` | shipped plans, `YYMMDD.NNNN.slug.md` |
+| `.agents/plans/history/` | abandoned or superseded plans |
+| `.agents/plans/backlog/` | open and dropped side-questions (below) |
+| `.agents/specs/` | agent-readable specs: contracts, conventions, runbooks an agent follows |
+| `.agents/scripts/` | scripts written for or by agents: owner-action handoffs, one-off migrations, probes |
+
+Human documentation stays in `docs/`; agent instructions stay in `AGENTS.md` /
+`CLAUDE.md` at the root and skills in `.claude/skills/`. A project still on a
+root `plans/` tree is migrated by `pipeline:onboard`.
+
+One plan per concern. A plan's own Status line and its position in `.agents/plans/` are both
 unreliable — verify completion against the code, not the header.
 
-## The backlog — `plans/backlog/`
+## The backlog — `.agents/plans/backlog/`
 
 Side-questions, ideas, and deferred concerns that surface mid-task are
 captured the moment they surface — one file, then back to the task. The
@@ -176,7 +189,7 @@ One question per file, named date raised, **provisional priority**, then the
 next free index across the directory:
 
 ```
-plans/backlog/YYMMDD.P.NNNN.slug.md     e.g. 260920.H.0012.usage-cache-is-shared.md
+.agents/plans/backlog/YYMMDD.P.NNNN.slug.md     e.g. 260920.H.0012.usage-cache-is-shared.md
 ```
 
 `P` is `H`, `M` or `L` — H for correctness, security, data loss or something
@@ -186,7 +199,7 @@ this shape and the older `YYMMDD.NNNN` one, so an existing backlog keeps its
 numbering. Get the name from:
 
 ```sh
-~/.claude/bin/backlog-triage.sh --name -t '<title>' -p H -d plans/backlog
+~/.claude/bin/backlog-triage.sh --name -t '<title>' -p H -d .agents/plans/backlog
 ```
 
 **The priority at capture is yours to set, not a model's.** Capture is the one
@@ -222,7 +235,7 @@ never at capture. This is the moment the answer changes something, and by then
 the file carries the context a cold judgement needs:
 
 ```sh
-~/.claude/bin/backlog-triage.sh --assess -f plans/backlog/<entry>.md
+~/.claude/bin/backlog-triage.sh --assess -f .agents/plans/backlog/<entry>.md
 ```
 
 It returns `worth`, a `priority`, a `reason`, and `rename_to` when the priority
@@ -249,17 +262,17 @@ set at capture. The split exists because putting the model call at capture cost
 The backlog is a tracker, not an archive, so the two decisions end
 differently:
 
-- **accepted** — the entry **leaves `plans/backlog/` the moment the work
+- **accepted** — the entry **leaves `.agents/plans/backlog/` the moment the work
   starts**, not when it finishes. Its content moves into the plan that now
   owns it, the plan records `backlog: YYMMDD.NNNN.slug (raised <date>)` under
   its header, and the backlog file is deleted in the same commit that adds
   the plan. From there it follows the ordinary plan lifecycle and ends in
-  `plans/completed/` — an accepted entry is never tracked in two places at
+  `.agents/plans/completed/` — an accepted entry is never tracked in two places at
   once.
 - **dropped** — the file stays in place with its reason: a drop with a reason
   can be argued with later, a deletion cannot.
 
-So `plans/backlog/` holds exactly the open questions plus the dropped ones;
+So `.agents/plans/backlog/` holds exactly the open questions plus the dropped ones;
 anything accepted is visible as a plan, active or completed. The deleted
 entries are recoverable from git history through the plan's `backlog:` line.
 
@@ -267,7 +280,7 @@ entries are recoverable from git history through the plan's `backlog:` line.
 
 This skill is the ONLY place the pipeline is described. A project's
 `CLAUDE.md` never restates it — no step lists, no agent names, no lens
-definitions, no severity tables, no plans/ layout. Any such restatement is
+definitions, no severity tables, no .agents/plans/ layout. Any such restatement is
 drift from an older edition: replace it with the form below on sight, and
 keep the heading exactly `## Working agreement`.
 

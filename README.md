@@ -35,7 +35,7 @@ This copies two files and creates one directory — everything else arrives via 
   routes, env vars, deps) and the pipeline working agreement.
 - `.claude/settings.json` — the stack's permission allowlist plus the marketplace
   wiring (`extraKnownMarketplaces` + `enabledPlugins`).
-- `plans/` — the plan lifecycle skeleton (`active` → `completed/` → `history/`).
+- `.agents/` — plans (`active` → `completed/` → `history/`, plus `backlog/`), `specs/`, `scripts/`.
 
 Start `claude` in the project, approve the marketplace/plugin install when prompted,
 and run **`/pipeline:onboard`** — it walks the full checklist (wiring, permissions,

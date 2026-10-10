@@ -25,7 +25,7 @@ if hits=$(grep -rnE '^\s*//\s*[-=*#]{3,}' --include='*.go' . 2>/dev/null); then
 	printf '%s\n' "$hits" >&2
 fi
 
-# Plan and task references outside the plans/ tree. The reason belongs in the
+# Plan and task references outside the .agents/plans/ tree. The reason belongs in the
 # code; the plan number is meaningless to whoever reads the file later.
 #
 # .claude/agent-memory is exempt: it is written by agents to record where a piece
@@ -36,7 +36,7 @@ if hits=$(grep -rnE '(plans/[0-9]{3}-|PLAN-[0-9]+|task #[0-9]+)' \
 	--exclude-dir=plans --exclude-dir=.git --exclude-dir=agent-memory \
 	--exclude-dir=logs --exclude-dir=tmp --exclude-dir=build --exclude-dir=backups \
 	. 2>/dev/null); then
-	report "plan or task references outside plans/ (write the reason, not the ticket):"
+	report "plan or task references outside .agents/plans/ (write the reason, not the ticket):"
 	printf '%s\n' "$hits" >&2
 fi
 

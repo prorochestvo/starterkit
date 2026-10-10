@@ -90,11 +90,16 @@ rename; never assume the full set, never let one missing path abort the run.
 - Build/test/lint gates documented and **actually pass** — run them; a red tree is a
   ⚠️ finding, not a blocker for onboarding.
 
-## 5. Plans layout (mechanical)
+## 5. `.agents/` layout (mechanical)
 
-- `plans/`, `plans/completed/`, `plans/history/` exist (create with `.gitkeep`).
-- Stale active plans (`plans/NNN-*.md` for work that shipped or died) → ⚠️ list them;
-  completed → `pipeline:complete-plan`, abandoned → `plans/history/`.
+- Legacy root `plans/` exists → `git mv plans .agents/plans` (create `.agents/` first),
+  then rewrite `plans/` path references in `CLAUDE.md`/`AGENTS.md`, `.claude/`, and
+  `.agents/` itself to `.agents/plans/`. A root `plans/documentations/` moves to
+  `.agents/specs/`. Commit the move alone, so `git log --follow` keeps the history.
+- `.agents/plans/`, `.agents/plans/completed/`, `.agents/plans/history/`,
+  `.agents/plans/backlog/`, `.agents/specs/`, `.agents/scripts/` exist (create with `.gitkeep`).
+- Stale active plans (`.agents/plans/NNN-*.md` for work that shipped or died) → ⚠️ list them;
+  completed → `pipeline:complete-plan`, abandoned → `.agents/plans/history/`.
 
 ## 6. Agent memory (mechanical + judgment)
 
