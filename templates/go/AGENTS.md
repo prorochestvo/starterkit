@@ -72,9 +72,9 @@ All non-trivial work follows the plan-first pipeline:
    `pipeline:new-plan` skill). No source edits before a plan exists.
 2. **Implement** — the `engineer` agent executes the plan's tasks with tests.
 3. **Review** — three `reviewer` agents launched in parallel in ONE message, each
-   prompt naming its lens (A: correctness & tests, B: security & operations,
-   C: performance & architecture) and the changed files. Full three-lens fan-out is
-   mandatory on the first review; the post-fix re-review is ONE solo reviewer scoped
+   prompt naming its focus (correctness and tests, security and operations,
+   architecture and performance) and the changed files. All three parallel reviewers
+   are mandatory on the first review; the post-fix re-review is ONE solo reviewer scoped
    to the changed lines.
 4. **Gate** — `make test` must be green before review; a red tree goes to the
    `testdoctor` agent first, at any stage.

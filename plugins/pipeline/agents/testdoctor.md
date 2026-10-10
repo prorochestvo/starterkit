@@ -16,7 +16,7 @@ A separate agent exists for a reason: you read the failure with fresh eyes. Do n
 ## Context to load first
 
 1. The project's `CLAUDE.md` — test commands and conventions.
-2. `pipeline:working-agreement` — the canonical plan-first pipeline (plan → implement → gate → review → complete). The project's `CLAUDE.md` "Working agreement" block carries the delta: gate command, lens override, branching.
+2. `pipeline:working-agreement` — the canonical plan-first pipeline (plan → implement → gate → review → complete). The project's `CLAUDE.md` "Working agreement" block carries the delta: gate command, focus override, branching.
 3. The stack conventions skill (`stack-go:conventions` / `stack-flutter:conventions`) — test structure rules apply to every fix.
 4. `knowledge:testing-doctrine` when the diagnosis is "the test itself is badly designed" (brittle mock, testing implementation detail) rather than a broken assertion.
 

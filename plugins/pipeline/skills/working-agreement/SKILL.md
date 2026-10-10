@@ -1,13 +1,13 @@
 ---
 name: working-agreement
-description: The canonical plan-first pipeline - plan with its own review cycle (Claude lenses, then gemini/codex), implement, gate, staged review (Claude fan, author-standards pass, external single-lens reviews), one-commit completion with cleanup - plus the .agents/plans/ layout, the project backlog (.agents/plans/backlog/), per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/NNN-slug.md, recording or triaging a side-question in .agents/plans/backlog/, invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many review lenses to run.
+description: The canonical plan-first pipeline - plan with its own review cycle (parallel reviewers, then gemini/codex), implement, gate, staged review (parallel reviewers, standards audit, external reviewers), one-commit completion with cleanup - plus the .agents/plans/ layout, the project backlog (.agents/plans/backlog/), per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/NNN-slug.md, recording or triaging a side-question in .agents/plans/backlog/, invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many parallel reviewers to run.
 ---
 
 # Working agreement
 
 The procedure every non-trivial change runs through, and the contract the four
 pipeline agents share. A project's own `CLAUDE.md` restates none of it — it
-carries only its delta (gate command, lens override, branching).
+carries only its delta (gate command, focus override, branching).
 
 ## The pipeline
 
@@ -17,10 +17,10 @@ carries only its delta (gate command, lens override, branching).
    the owner: take every decision it needs, and record each one with its
    reasoning and its reversal path. When the plan is ready and holds no open
    implementation questions, the plan itself is reviewed, in two rounds:
-   - **Claude plan review** — 2-3 `reviewer` lenses (opus, medium) over the
-     plan; findings go back to the architect and the cycle repeats until the
-     plan is approved.
-   - **External plan review** — one general lens from gemini
+   - **Claude plan review** — 2-3 parallel `reviewer` agents (opus, medium),
+     one focus each, over the plan; findings go back to the architect and the
+     cycle repeats until the plan is approved.
+   - **External plan review** — one general external review from gemini
      (`gemini-3.1-pro`, high effort) via the `gemini` skill. Fold its
      recommendations in, or record in the plan why one was rejected.
 2. **Code** — the `engineer` agent (haiku, medium effort) executes the
@@ -34,17 +34,18 @@ carries only its delta (gate command, lens override, branching).
    red tree goes to the `testdoctor` agent first, at any stage. Chain gate
    and commit with `&&`, never `;`.
 3. **Review** — three phases, in order:
-   - **Claude fan** — `reviewer` agents (opus, medium) launched in parallel in
-     ONE message, each prompt naming its lens and the changed files
-     (standard: A correctness & tests, B security & operations,
-     C performance & architecture). **P0 findings are fixed immediately,
+   - **Parallel reviewers** — `reviewer` agents (opus, medium) launched in
+     parallel in ONE message, each prompt naming its focus and the changed
+     files (standard: correctness and tests, security and operations,
+     architecture and performance). **P0 findings are fixed immediately,
      without asking**, then re-checked by one solo reviewer scoped to the
      changed lines.
-   - **Author-standards pass** — once the fan is clean, the
-     `code-standards-auditor` agent (lens O, the owner's R# rule set) runs as
-     its own sequential pass and its grooming is applied directly: the goal
-     is code that reads as if the owner wrote it. The owner keeps growing
-     that rule set; never skip this pass and never ask whether to run it.
+   - **Standards audit** — once the parallel reviewers are clean, the
+     `code-standards-auditor` agent checks the change against the owner's R#
+     rule set as its own sequential pass and its grooming is applied directly:
+     the goal is code that reads as if the owner wrote it. The owner keeps
+     growing that rule set; never skip this audit and never ask whether to run
+     it.
    - **External review, only when something blocks.** A finding that would
      block is not settled inside one model family: state your own position,
      then run the owner's wrapper, which assembles the material and merges the
@@ -73,7 +74,7 @@ carries only its delta (gate command, lens override, branching).
 ## Background execution & context hygiene
 
 Pipeline work never occupies the foreground. Every stage — architect,
-engineer, reviewer fan, author-standards pass, external reviews — is
+engineer, parallel reviewers, standards audit, external reviewers — is
 launched as background subagents, and the main thread stays free to talk to
 the owner and accept new commands while stages run. Do not block the
 conversation waiting on a stage: report stage completions as they land, and
@@ -111,13 +112,13 @@ passing. The engineer's fallback chain is the one exception, and it is not
 a choice made on the fly: Codex over OpenRouter keeps the same model when
 the plan quota is out, and haiku writes only when OpenRouter is down too.
 
-The two external lenses sit at deliberately different tiers because their
+The two external reviewers sit at deliberately different tiers because their
 plans behave differently. Gemini runs at its top tier: measured over the
 week to 2026-09-13 the Pro plan stood at 1% of its weekly allowance, so the
 cheap tier was bought with quality for a constraint that does not exist.
 Codex stays at its cheapest tier, and since 2026-10-04 it also writes the
 code, so implementation spends the same weekly allowance as the external
-lens. When that allowance runs out, the same `gpt-6-luna` keeps writing
+review. When that allowance runs out, the same `gpt-6-luna` keeps writing
 through OpenRouter (pay-per-token, about a cent per small task, under the
 key's $5 monthly cap); haiku is the last resort behind it. Check the plan
 with `~/.claude/bin/codex-limits.py`. The
@@ -144,7 +145,7 @@ quorum can answer it, so it goes to the owner directly.
 
 ## Severity
 
-One scale across every lens, because it decides routing, not tone:
+One scale across every reviewer, because it decides routing, not tone:
 
 | | | Action |
 |---|---|---|
@@ -153,10 +154,10 @@ One scale across every lens, because it decides routing, not tone:
 | **P2** | a real defect with bounded blast radius | backlog |
 | **P3** | a judgement call, a preference, the owner's ruling | backlog |
 
-A lens scopes *what* a reviewer hunts, not severity: any lens may raise any
-of P0-P3. Grading a real P0 down to avoid fixing it is the failure mode to
-watch for in yourself. The author-standards pass is the exception to the
-backlog default: its grooming is applied in-cycle — that is its purpose.
+A focus scopes *what* a reviewer hunts, not severity: any reviewer may raise
+any of P0-P3. Grading a real P0 down to avoid fixing it is the failure mode
+to watch for in yourself. The standards audit is the exception to the backlog
+default: its grooming is applied in-cycle — that is its purpose.
 
 ## The `.agents/` tree
 
@@ -280,7 +281,7 @@ entries are recoverable from git history through the plan's `backlog:` line.
 ## Project delta form
 
 This skill is the ONLY place the pipeline is described. A project's
-`CLAUDE.md` never restates it — no step lists, no agent names, no lens
+`CLAUDE.md` never restates it — no step lists, no agent names, no focus
 definitions, no severity tables, no .agents/plans/ layout. Any such restatement is
 drift from an older edition: replace it with the form below on sight, and
 keep the heading exactly `## Working agreement`.
@@ -292,14 +293,14 @@ Plan-first pipeline; the canonical procedure is the `pipeline:working-agreement`
 before starting non-trivial work. Project delta:
 
 - **Gate:** <the project's exact gate command>
-- **Lenses:** standard staged set — see `pipeline:working-agreement`.  |  OR:
-  override / escalation — <letter>: <what it hunts>
+- **Review focus:** standard staged set — see `pipeline:working-agreement`.  |  OR:
+  override / escalation — <focus name>: <what it hunts>
 - **Branching:** standard — `dev` is the integration branch  |  OR: <the project's model>
 ```
 
 What belongs in the bullets — and only this — is the project's genuine
 delta: the exact gate command with its project-true caveats (extra CI-only
-steps, path quirks), lens overrides or escalation sets beyond the standard
+steps, path quirks), focus overrides or escalation sets beyond the standard
 staged set, and the branching model with its consequences (integration
 branch, `--base` flags, issues that need manual closing). A bullet may carry
 a caveat sentence; it may not re-explain what this skill already says. When

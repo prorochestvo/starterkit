@@ -57,7 +57,7 @@ rename; never assume the full set, never let one missing path abort the run.
   adding it to the starterkit canon (stack conventions or a knowledge skill); noise →
   delete. Real examples: a test-only-code placement rule harvested into
   `stack-go:conventions`; a site reviewer's SEO/a11y checklist preserved as a
-  project lens override.
+  project focus override.
 - `.claude/agents/*.md` duplicating pipeline roles (architect/engineer/reviewer/
   testdoctor under any naming — `gocode-*`, `site-*`, `flutter-*`) → ⚠️ recommend
   deletion after harvesting; the plugin provides the roles.
@@ -102,10 +102,10 @@ rename; never assume the full set, never let one missing path abort the run.
   testify; no `-race` on arm64; throw/catch-log error handling instead of a Failure
   hierarchy). A silent override gets "fixed" back to canon by some future session.
 - Has the **Working agreement** section (pipeline stages, gates, P0-P3, plan
-  lifecycle). Older pipelines (different fan-out counts, single-reviewer flows,
-  Blocker/Major scales) → ⚠️ recommend the standard block; preserve deliberate
-  project overrides (e.g. a domain-specific reviewer lens) as named overrides
-  inside the working agreement.
+  lifecycle). Older pipelines (a different number of parallel reviewers,
+  single-reviewer flows, Blocker/Major scales) → ⚠️ recommend the standard block;
+  preserve deliberate project overrides (e.g. a domain-specific reviewer focus) as
+  named overrides inside the working agreement.
 - Build/test/lint gates documented and **actually pass** — run them; a red tree is a
   ⚠️ finding, not a blocker for onboarding.
 
