@@ -1,6 +1,6 @@
 ---
 name: working-agreement
-description: The canonical plan-first pipeline - plan with its own review cycle (parallel reviewers, then gemini/codex), implement, gate, staged review (parallel reviewers, standards audit, external reviewers), one-commit completion with cleanup - plus the .agents/plans/ layout, the project backlog (.agents/plans/backlog/), per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/NNN-slug.md, recording or triaging a side-question in .agents/plans/backlog/, invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many parallel reviewers to run.
+description: The canonical plan-first pipeline - plan with its own review cycle (parallel reviewers, then gemini/codex), implement, gate, staged review (parallel reviewers, standards audit, external reviewers), one-commit completion with cleanup - plus per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/YYMMDD.NNNN.slug.md, recording or triaging a side-question in .agents/plans/backlog/ (the plan and backlog rules themselves live in the global task-management skill), invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many parallel reviewers to run.
 ---
 
 # Working agreement
@@ -12,7 +12,7 @@ carries only its delta (gate command, focus override, branching).
 ## The pipeline
 
 1. **Plan** — the `architect` agent (opus, medium effort) writes
-   `.agents/plans/NNN-slug.md` (create via the `pipeline:new-plan` skill). No source
+   `.agents/plans/YYMMDD.NNNN.slug.md` (create via the `pipeline:new-plan` skill). No source
    edits before a plan exists. The plan must be executable without waiting on
    the owner: take every decision it needs, and record each one with its
    reasoning and its reversal path. When the plan is ready and holds no open
@@ -159,124 +159,28 @@ any of P0-P3. Grading a real P0 down to avoid fixing it is the failure mode
 to watch for in yourself. The standards audit is the exception to the backlog
 default: its grooming is applied in-cycle — that is its purpose.
 
-## The `.agents/` tree
+## Plans and the backlog
 
 Every project keeps its agent-facing material under one root, `.agents/`:
+`plans/` (active plans), `plans/completed/` (shipped), `plans/history/`
+(abandoned or superseded), `plans/backlog/` (open and dropped side-questions),
+`specs/` (agent-readable contracts, conventions, runbooks), `scripts/` (scripts
+written for or by agents), and `skills/` (project skills; `.claude/skills` is a
+committed symlink to it). Human documentation stays in `docs/`; agent
+instructions stay in `AGENTS.md` at the root, with `CLAUDE.md` a symlink to it.
+A project still on a root `plans/` tree is migrated by `pipeline:onboard`.
 
-| Path | Holds |
-|---|---|
-| `.agents/plans/` | active plans, `NNN-slug.md` |
-| `.agents/plans/completed/` | shipped plans, `YYMMDD.NNNN.slug.md` |
-| `.agents/plans/history/` | abandoned or superseded plans |
-| `.agents/plans/backlog/` | open and dropped side-questions (below) |
-| `.agents/specs/` | agent-readable specs: contracts, conventions, runbooks an agent follows |
-| `.agents/scripts/` | scripts written for or by agents: owner-action handoffs, one-off migrations, probes |
-| `.agents/skills/` | project skills; `.claude/skills` is a committed symlink to it |
-
-Human documentation stays in `docs/`; agent instructions stay in `AGENTS.md` at the
-root, with `CLAUDE.md` a symlink to it, and skills in `.agents/skills/`. A project still on a
-root `plans/` tree is migrated by `pipeline:onboard`.
-
-One plan per concern. A plan's own Status line and its position in `.agents/plans/` are both
-unreliable — verify completion against the code, not the header.
-
-## The backlog — `.agents/plans/backlog/`
-
-Side-questions, ideas, and deferred concerns that surface mid-task are
-captured the moment they surface — one file, then back to the task. The
-backlog exists so a passing thought neither derails the current work nor
-evaporates.
-
-One question per file, named date raised, **provisional priority**, then the
-next free index across the directory:
-
-```
-.agents/plans/backlog/YYMMDD.P.NNNN.slug.md     e.g. 260920.H.0012.usage-cache-is-shared.md
-```
-
-`P` is `H`, `M` or `L` — H for correctness, security, data loss or something
-already breaking; M for a real defect or gap that is not urgent; L for cleanup,
-consistency and nice-to-have. Indexes are never reused and count across both
-this shape and the older `YYMMDD.NNNN` one, so an existing backlog keeps its
-numbering. Get the name from:
-
-```sh
-~/.claude/bin/backlog-triage.sh --name -t '<title>' -p H # run from the repo root; the script picks the backlog dir
-```
-
-**The priority at capture is yours to set, not a model's.** Capture is the one
-moment that must stay instant — one file, then back to the task — and a model
-call there trades that property for an opinion nothing yet depends on. Judge it
-yourself and move on; it is provisional and gets checked before the entry
-becomes work. File form:
-
-```markdown
-# <short imperative title>
-
-- raised: <YYYY-MM-DD> — <one-line context: during what work>
-- decision: open
-
-<The question: what needs discussing, evaluating, or deciding, with
-whatever context a cold reader needs to judge it.>
-```
-
-Review findings deferred out of a cycle land here too, with their severity
-on the `raised:` line and mapped onto the filename's priority: P0/P1 → `H`,
-P2 → `M`, P3 → `L`.
-
-Triage happens when the owner asks ("разберём беклог", "triage the backlog")
-or when picking work with no instruction: every reviewed file gets an
-explicit decision on its `decision:` line — `accepted` or `dropped —
-<one-line reason> (<date>)`. Never resolve an entry silently, and never turn
-triage into one question per item — batch it.
-
-### Assessment, before an entry becomes work
-
-**An entry is assessed by a model outside this family before it is accepted**,
-never at capture. This is the moment the answer changes something, and by then
-the file carries the context a cold judgement needs:
-
-```sh
-~/.claude/bin/backlog-triage.sh --assess -f .agents/plans/backlog/<entry>.md
-```
-
-It returns `worth`, a `priority`, a `reason`, and `rename_to` when the priority
-moved. Apply it:
-
-- `worth: false` → the entry is **dropped with the returned reason**, not
-  deleted, and keeps its name. A rejected entry never becomes work, so its
-  priority stops mattering.
-- `worth: true` → adopt the returned priority. If `rename_to` is set, rename
-  with `git mv` in the same commit that creates the plan, keeping the index.
-- `assessed_by: none` → no reviewer answered. **Proceed anyway** at the existing
-  priority and say so. An outage must never park a question indefinitely.
-
-The cheap lane answers by default because "is this real, and how urgent" is
-classification with a checkable answer; the paid clients are called only when it
-reports `H` or when nothing answered. A disagreement on urgency resolves
-**upward** — under-rating a real defect costs more than looking at an `M` that
-turned out to be an `L`.
-
-*Reversing this:* drop the `--assess` call and accept entries on the priority
-set at capture. The split exists because putting the model call at capture cost
-60+ seconds and a paid quota per entry, several per cycle.
-
-The backlog is a tracker, not an archive, so the two decisions end
-differently:
-
-- **accepted** — the entry **leaves `.agents/plans/backlog/` the moment the work
-  starts**, not when it finishes. Its content moves into the plan that now
-  owns it, the plan records `backlog: YYMMDD.NNNN.slug (raised <date>)` under
-  its header, and the backlog file is deleted in the same commit that adds
-  the plan. From there it follows the ordinary plan lifecycle and ends in
-  `.agents/plans/completed/` — an accepted entry is never tracked in two places at
-  once.
-- **dropped** — the file stays in place with its reason: a drop with a reason
-  can be argued with later, a deletion cannot.
-
-So `.agents/plans/backlog/` holds exactly the open questions plus the dropped ones;
-anything accepted is visible as a plan, active or completed. The deleted
-entries are recoverable from git history through the plan's `backlog:` line.
+The rules for plans and the backlog — the tree, the naming
+(`YYMMDD.NNNN.slug.md` for plans, `YYMMDD.P.NNNN.slug.md` for backlog entries,
+prefixed with the origin plan's id), the plan template, review before
+implementation, capture, triage, assessment, completion, and the legacy shapes —
+live in ONE place: the global `task-management` skill
+(`~/.claude/skills/task-management/`, references `plans.md` and `backlog.md`).
+Load it for any of those; this skill does not restate them. In short: one plan
+per concern; verify completion against the code, not the plan's header; capture
+a side-question instantly as one backlog file (prefixed with the active plan's
+id) and get back to the task; a deferred review finding lands there with its
+severity (P0/P1 → H, P2 → M, P3 → L); never resolve a backlog entry silently.
 
 ## Project delta form
 

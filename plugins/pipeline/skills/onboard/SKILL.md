@@ -124,7 +124,7 @@ rename; never assume the full set, never let one missing path abort the run.
   `.agents/plans/backlog/`, `.agents/specs/`, `.agents/scripts/`, `.agents/skills/` exist
   (create with `.gitkeep`), and `.claude/skills` is the link to `../.agents/skills`
   (absent → `ln -s ../.agents/skills .claude/skills`).
-- Stale active plans (`.agents/plans/NNN-*.md` for work that shipped or died) → ⚠️ list them;
+- Stale active plans (`.agents/plans/*.md`, either `YYMMDD.NNNN.slug.md` or legacy `NNN-slug.md`, for work that shipped or died) → ⚠️ list them;
   completed → `pipeline:complete-plan`, abandoned → `.agents/plans/history/`.
 
 ## 6. Agent memory (mechanical + judgment)
