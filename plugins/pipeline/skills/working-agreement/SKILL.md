@@ -21,10 +21,10 @@ carries only its delta (gate command, focus override, branching).
      one focus each, over the plan; findings go back to the architect and the
      cycle repeats until the plan is approved.
    - **External plan review** — one general external review from gemini
-     (`gemini-3.1-pro`, high effort) via the `gemini` skill. Fold its
+     (`g-pro`, high effort) via the `ai-gemini` skill. Fold its
      recommendations in, or record in the plan why one was rejected.
 2. **Code** — the `engineer` agent (haiku, medium effort) executes the
-   plan's tasks with tests: Codex (`gpt-6-luna`, medium reasoning) writes the
+   plan's tasks with tests: Codex (`luna`, medium reasoning) writes the
    code, the engineer verifies and gates it. When the Codex plan is out of
    quota the same model runs through OpenRouter; the engineer writes the
    code itself only when that lane is down too. Side tasks and nuances that do not block the work
@@ -91,15 +91,15 @@ their own contexts, so a main-thread compaction never kills them.
 
 | Role | Claude | Gemini | Codex |
 |---|---|---|---|
-| architect / plan review | opus + medium | `gemini-3.1-pro` + high | — |
-| engineer | haiku + medium (drives Codex; writes only as last fallback) | — | `gpt-6-luna` + medium (writes the code; via OpenRouter when the plan is out) |
-| reviewer | opus + medium | `gemini-3.1-pro` + high | `gpt-6-luna` |
+| architect / plan review | opus + medium | `g-pro` + high | — |
+| engineer | haiku + medium (drives Codex; writes only as last fallback) | — | `luna` + medium (writes the code; via OpenRouter when the plan is out) |
+| reviewer | opus + medium | `g-pro` + high | `luna` |
 | testdoctor | opus + medium | — | — |
 
 Medium is the default effort for every Claude role: the owner's call on
 2026-10-04, trading depth per call for headroom across the whole cycle. Raise
 one role in its agent frontmatter when a project needs it.
-(`gemini-3.1-pro` offers only low/high effort — verified against the agy
+(`g-pro` offers only low/high effort — verified against the agy
 catalog; high is the review tier. Test diagnosis is judgment work, hence
 testdoctor rides the reviewer tier.)
 
@@ -118,7 +118,7 @@ week to 2026-09-13 the Pro plan stood at 1% of its weekly allowance, so the
 cheap tier was bought with quality for a constraint that does not exist.
 Codex stays at its cheapest tier, and since 2026-10-04 it also writes the
 code, so implementation spends the same weekly allowance as the external
-review. When that allowance runs out, the same `gpt-6-luna` keeps writing
+review. When that allowance runs out, the same `luna` keeps writing
 through OpenRouter (pay-per-token, about a cent per small task, under the
 key's $5 monthly cap); haiku is the last resort behind it. Check the plan
 with `~/.claude/bin/codex-limits.py`. The
@@ -126,7 +126,7 @@ week of 2026-09-13 showed the allowance exhausted on day one, a reading
 possibly polluted by free-tier usage; as of 2026-10-04 the weekly window
 stood at 2% used.
 
-Gemini and codex are reached through the `gemini` and `codex` skills
+Gemini and codex are reached through the `ai-gemini` and `ai-codex` skills
 (headless CLIs). They see nothing of the session: every call carries
 self-contained context and a concrete question.
 
