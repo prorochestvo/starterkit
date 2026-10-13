@@ -14,7 +14,7 @@ starterkit` instead of re-copying files.
 
 | Plugin | Contents |
 |--------|----------|
-| `pipeline` | Four stack-agnostic agents — `architect` (planning), `engineer` (implementation), `reviewer` (3-lens parallel fan-out), `testdoctor` (red-test triage) — plus the plan-lifecycle, permission-sync, and onboarding skills |
+| `pipeline` | Four stack-agnostic agents — `architect` (planning), `engineer` (implementation), `reviewer` (three parallel reviewers, one focus each), `testdoctor` (red-test triage) — plus the plan-lifecycle, permission-sync, and onboarding skills |
 | `stack-go` | Go conventions (style, declaration order, code organization, error contract, test structure) and Go knowledge distilled from *100 Go Mistakes*, *Effective Concurrency in Go*, and *Efficient Go* |
 | `stack-flutter` | Flutter/Dart conventions: forbidden constructs, state-management discipline, test structure, error contract |
 | `knowledge` | Cross-stack doctrine: DDD (strategic/tactical), SQL antipatterns, PostgreSQL performance, MongoDB modeling, testing, production stability, data systems, software design, and forecasting |
@@ -50,8 +50,8 @@ for the judgment calls.
 ## The pipeline
 
 ```
-plan (architect) → implement (engineer) → review (reviewer ×3, parallel lenses:
-A correctness & tests · B security & ops · C performance & architecture)
+plan (architect) → implement (engineer) → review (reviewer ×3 in parallel, one focus each:
+correctness & tests · security & ops · performance & architecture)
 → fix loop (engineer / testdoctor) → solo re-review of changed lines → complete-plan
 ```
 

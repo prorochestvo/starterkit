@@ -12,7 +12,7 @@
     {
       "name": "pipeline",
       "source": "./plugins/pipeline",
-      "description": "Stack-agnostic engineering pipeline: architect, engineer, reviewer (3-lens fan-out), testdoctor agents plus the plan lifecycle skills.",
+      "description": "Stack-agnostic engineering pipeline: architect, engineer, reviewer (three parallel reviewers), testdoctor agents plus the plan lifecycle skills.",
       "category": "workflow"
     },
     {
