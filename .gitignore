@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Claude Code local overrides
+**/.claude/settings.local.json
+
+# Logs
+*.log
+
+# Books are local raw material for the knowledge skills — never committed
+books/**

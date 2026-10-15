@@ -1,0 +1,8 @@
+{
+  "name": "knowledge",
+  "description": "Distilled engineering doctrine from foundational books, exposed as on-demand skills: DDD (strategic/tactical), SQL antipatterns, PostgreSQL performance, MongoDB modeling, testing doctrine, production stability, data systems, software design, forecasting.",
+  "version": "1.1.0",
+  "author": {
+    "name": "Seilbek"
+  }
+}

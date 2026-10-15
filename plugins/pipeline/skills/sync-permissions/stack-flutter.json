@@ -1,0 +1,19 @@
+{
+  "allow": [
+    "Bash(flutter pub:*)",
+    "Bash(flutter test:*)",
+    "Bash(flutter analyze:*)",
+    "Bash(flutter build:*)",
+    "Bash(flutter clean)",
+    "Bash(flutter doctor:*)",
+    "Bash(flutter --version)",
+    "Bash(dart format:*)",
+    "Bash(dart analyze:*)",
+    "Bash(dart run:*)",
+    "Bash(dart pub:*)"
+  ],
+  "deny": [
+    "Read(**/*.keystore)",
+    "Read(**/*.jks)"
+  ]
+}
