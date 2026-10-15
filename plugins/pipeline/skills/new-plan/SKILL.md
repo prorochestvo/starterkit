@@ -1,6 +1,6 @@
 ---
 name: new-plan
-description: Create a new plan file in .agents/plans/ as YYMMDD.NNNN.slug.md - named by ~/.claude/bin/plan-name.sh, written from the standard task-breakdown template of the global task-management skill, consuming a backlog entry when the plan comes from one. Use when starting any non-trivial piece of work that needs a plan before implementation.
+description: Create a new plan file in .agents/plans/ as YYMMDD.NNNN.slug.md - named by ~/.claude/skills/task-management/scripts/plan-name.sh, written from the standard task-breakdown template of the global task-management skill, consuming a backlog entry when the plan comes from one. Use when starting any non-trivial piece of work that needs a plan before implementation.
 argument-hint: <title or kebab-case slug> [backlog entry filename]
 ---
 
@@ -21,7 +21,7 @@ Steps:
 2. Name the file — never by hand:
 
    ```sh
-   ~/.claude/bin/plan-name.sh -t '<title>'        # from the repo root
+   ~/.claude/skills/task-management/scripts/plan-name.sh -t '<title>'        # from the repo root
    ```
 
    It prints `YYMMDD.NNNN.slug.md`: today's date and the next free plan number across
