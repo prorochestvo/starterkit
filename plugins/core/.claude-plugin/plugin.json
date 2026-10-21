@@ -1,0 +1,8 @@
+{
+  "name": "core",
+  "description": "Shared agent tooling: plan and backlog lifecycle (task-management), development workflow, git and GitHub rules, engineering contracts, instruction writing, skill tuning and incubation, external-model clients (Codex, Gemini, Claude, OpenRouter, Cloudflare), the second-opinion review flow, and the code-standards-auditor agent.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Seilbek"
+  }
+}

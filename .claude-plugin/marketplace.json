@@ -10,6 +10,18 @@
   },
   "plugins": [
     {
+      "name": "core",
+      "source": "./plugins/core",
+      "description": "Shared agent tooling: plan and backlog lifecycle, development workflow, git and GitHub rules, engineering contracts, instruction writing, skill maintenance, external-model clients, the second-opinion review flow, and the code-standards-auditor agent. Required by pipeline and core-hooks.",
+      "category": "workflow"
+    },
+    {
+      "name": "core-hooks",
+      "source": "./plugins/core-hooks",
+      "description": "Opt-in hooks that need core: commit-message review on integration branches and an advisory quorum for multiple-choice questions (both send data to OpenAI, Anthropic and OpenRouter), plus the skill-tuner remark marker.",
+      "category": "workflow"
+    },
+    {
       "name": "pipeline",
       "source": "./plugins/pipeline",
       "description": "Stack-agnostic engineering pipeline: architect, engineer, reviewer (three parallel reviewers), testdoctor agents plus the plan lifecycle skills.",
