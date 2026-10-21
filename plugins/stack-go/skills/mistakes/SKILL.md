@@ -153,8 +153,7 @@ See `stack-go:concurrency` for the doctrine. The judgment items:
 
 ## Tests
 
-- A failing table case must identify itself: named subtests via
-  `t.Run(tc.name, ...)`, not an index.
+- Fixed cases are explicit named subtests (R47, common-contracts go-layout.md).
 - Assertions target observable behavior, not internal state. A test that breaks
   on every refactor is measuring the implementation (see
   `knowledge:testing-doctrine`).
