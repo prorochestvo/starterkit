@@ -11,6 +11,13 @@
             "if": "Bash(git commit *)",
             "timeout": 150,
             "statusMessage": "Reviewing commit message..."
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/with-core.sh\" review-commit-msg.sh",
+            "if": "Bash(gh pr merge *)",
+            "timeout": 150,
+            "statusMessage": "Reviewing squash message..."
           }
         ]
       },
