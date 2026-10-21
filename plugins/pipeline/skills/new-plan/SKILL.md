@@ -1,15 +1,15 @@
 ---
 name: new-plan
-description: Create a new plan file in .agents/plans/ as YYMMDD.NNNN.slug.md - named by ~/.claude/skills/task-management/scripts/plan-name.sh, written from the standard task-breakdown template of the global task-management skill, consuming a backlog entry when the plan comes from one. Use when starting any non-trivial piece of work that needs a plan before implementation.
+description: Create a new plan file in .agents/plans/ as YYMMDD.NNNN.slug.md - named by plan-name.sh, written from the standard task-breakdown template of the task-management skill, consuming a backlog entry when the plan comes from one. Use when starting any non-trivial piece of work that needs a plan before implementation.
 argument-hint: <title or kebab-case slug> [backlog entry filename]
 ---
 
 Create a new plan file in `.agents/plans/` for `$ARGUMENTS` (a title or slug, optionally
 followed by the backlog entry it comes from).
 
-The rules — tree, naming, template, backlog handover — are the global `task-management`
-skill's (`~/.claude/skills/task-management/references/plans.md`); this skill only runs
-them in order.
+The rules — tree, naming, template, backlog handover — are the `task-management`
+skill's (its reference `plans.md`); this skill only runs them in order. If
+`command -v plan-name.sh` finds nothing, stop and report: install core@starterkit.
 
 Steps:
 
@@ -21,14 +21,14 @@ Steps:
 2. Name the file — never by hand:
 
    ```sh
-   ~/.claude/skills/task-management/scripts/plan-name.sh -t '<title>'        # from the repo root
+   plan-name.sh -t '<title>'        # from the repo root
    ```
 
    It prints `YYMMDD.NNNN.slug.md`: today's date and the next free plan number across
    `.agents/plans/`, `completed/`, `history/`, and every legacy shape. That id is fixed for
    the plan's whole life.
-3. Write `.agents/plans/<that name>` with the template from
-   `~/.claude/skills/task-management/references/plans.md` (section "Creating a plan").
+3. Write `.agents/plans/<that name>` with the template from the `task-management`
+   skill's reference `plans.md` (section "Creating a plan").
 4. If the plan originates from a `.agents/plans/backlog/` entry: move that entry's
    content into the plan, fill the `backlog: <entry filename without .md> (raised <date>)`
    header line — and `origin plan: <id>` when the entry's filename carries a plan-id
