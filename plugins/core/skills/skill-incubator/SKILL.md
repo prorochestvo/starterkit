@@ -19,6 +19,7 @@ Build fewer, better skills. Observe actual work, collect evidence, trial procedu
 
 ## Rules
 
+- New skills are private unless the owner promotes them; the only mechanical condition is a clean `public-gate.sh --tree`.
 - Prefer extending an existing skill or script to creating a new one. A single command, routine task, generic bug fix, or code-derivable convention is not a candidate.
 - Scope is `project`, `stack`, or `global`; multiple project observations do **not** automatically make a candidate global.
 - `success` requires independent evidence (tests, inspected artifact, user acceptance, etc.). Otherwise use `partial`, `failed`, or `unknown`.

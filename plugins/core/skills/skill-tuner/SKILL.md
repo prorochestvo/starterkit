@@ -43,9 +43,11 @@ orchestrate: it logs the remark as `queued` and, in Claude Code, hands steps 2�
 only when the Codex lane is down; no other model stands in for `luna` or for a reviewer.
 
 Draft only, never edit directly: anything under `skills/synced/` (vendor mirror, overwritten
-by sync), plugin skills such as `pipeline:*` (they live in the starterkit repository), the
-published copies under `plugins/core/**` in the starterkit repository (they change only
-through the export), and removing or weakening any `R#` rule in `common-contracts`.
+by sync), the installed copies of plugin skills under the plugin cache (overwritten by every
+update), and removing or weakening any `R#` rule in `common-contracts`. Public skills, those
+of the starterkit plugins (`core:*`, `pipeline:*` and the others), are edited only through a
+starterkit pull request (step 6); private skills stay in the owner's configuration
+repository.
 `AGENTS.md`/`CLAUDE.md`: draft only, per the owner's own rule in that file ("propose the
 change, I apply it").
 
@@ -157,8 +159,15 @@ task first, then tune, then log. Everything below happens in the same turn.
    step 6. Any `revise` after the one redraft → do not apply: show the diff and every
    reviewer's position in chat, status `drafted`.
 6. **Commit one change per remark** in the repository that holds the skill:
-   - global skills: the repository that holds the skill — stage only the skill's own paths,
-     never `git add -A`; other uncommitted files there belong to other sessions;
+   - public skills (starterkit plugins): a branch in a starterkit clone, never `main`;
+     push only after `public-gate.sh --range "<remote branch or base>..HEAD"` reports 0
+     failing; write the PR title and body to files, gate each with `public-gate.sh --text`,
+     then open the PR with `gh pr create --body-file`. Never edit `version`: the plugin
+     version workflow stamps it. The change takes effect after the owner merges the PR and
+     the hosts update the marketplace; log the PR URL in `note`, rollback is a revert PR;
+   - private skills: the configuration repository that holds the skill — stage only the
+     skill's own paths, never `git add -A`; other uncommitted files there belong to other
+     sessions;
    - project skills (`.agents/skills/`): that project's repository, under its branch rules.
 
    Message `docs(<skill>): <subject>`, body one sentence of why, in plain
