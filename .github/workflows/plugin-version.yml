@@ -1,0 +1,89 @@
+# Stamps plugin versions (YYYYMM.NNN) inside pull requests, so the squash merge carries the
+# version and main gets no extra commit. See .github/scripts/plugin-version.sh.
+#
+# - pull_request: stamp every changed plugin on the PR branch and push one commit; a PR from
+#   a fork cannot be pushed to, so it only gets the check.
+# - push to main: re-stamp the open same-repository PRs, because a merge may have taken the
+#   number they carry. The base is merged into the PR branch first.
+#
+# The bot commit carries [skip ci]: without it, its push starts a run that waits for approval.
+name: plugin-version
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths: ["plugins/**"]
+  push:
+    branches: [main]
+    paths: ["plugins/**"]
+
+concurrency:
+  group: plugin-version-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  stamp:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Fetch the base branch
+        run: git fetch --no-tags "https://github.com/${{ github.repository }}" "${{ github.base_ref }}:refs/remotes/base/${{ github.base_ref }}"
+      - name: Stamp and push
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          BASE: base/${{ github.base_ref }}
+        run: |
+          .github/scripts/plugin-version.sh stamp "$BASE"
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -qam "chore(release): stamp plugin versions [skip ci]"
+            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          fi
+      - name: Check
+        run: .github/scripts/plugin-version.sh check "base/${{ github.base_ref }}"
+
+  restamp:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Re-stamp open pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp .github/scripts/plugin-version.sh "$RUNNER_TEMP/plugin-version.sh"
+          gh pr list --base main --state open --json number,headRefName,isCrossRepository \
+            --jq '.[] | select(.isCrossRepository | not) | .headRefName' |
+          while read -r branch; do
+            git fetch -q origin "$branch"
+            git checkout -q -B "$branch" "origin/$branch"
+            if git diff --quiet origin/main...HEAD -- plugins/; then
+              continue
+            fi
+            if ! git merge -q --no-edit origin/main; then
+              git merge --abort
+              echo "::warning::$branch conflicts with main; resolve it, then push to re-stamp"
+              continue
+            fi
+            "$RUNNER_TEMP/plugin-version.sh" stamp origin/main
+            if git diff --quiet; then
+              continue # its number is still the next one; leave the branch alone
+            fi
+            git commit -qam "chore(release): stamp plugin versions [skip ci]"
+            git push -q origin "HEAD:$branch"
+          done
