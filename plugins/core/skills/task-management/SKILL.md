@@ -6,7 +6,7 @@ description: The single source of the rules for project plans, owner feedback, a
 # Task management
 
 The rules for three task records under `.agents/plans/`: plans, owner feedback, and
-the backlog. This skill is the one source of those rules; the starterkit's
+the backlog. This skill is the one source of those rules; the `pipeline` plugin's
 `pipeline:working-agreement`, `pipeline:new-plan`, and `pipeline:complete-plan` point here
 rather than restating them.
 
@@ -30,5 +30,5 @@ engineering execution, including preflight, review, and verification. The pipeli
 itself — who plans, who implements, who reviews — stays in `pipeline:working-agreement`.
 
 Plan and backlog filenames are never hand-built; owner feedback filenames are supplied by the owner and are never renamed. The skill's scripts in
-`${CLAUDE_SKILL_DIR}/scripts/`, on `PATH` under their own names, produce them: `plan-name.sh` for plans,
+`${CLAUDE_SKILL_DIR}/scripts/`, on `PATH` under their own names through the `core` plugin's `bin/`, produce them: `plan-name.sh` for plans,
 `backlog-triage.sh --name` for backlog entries.
