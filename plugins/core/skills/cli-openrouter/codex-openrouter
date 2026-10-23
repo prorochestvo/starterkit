@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Runs the Codex CLI with OpenRouter as its model provider, so a task keeps the
+# same harness and model when the ChatGPT plan is out of quota. The key is read
+# here rather than by the caller: agent sessions are denied direct .env access.
+# Lookup order: the environment, ${XDG_CONFIG_HOME:-$HOME/.config}/cli-openrouter/.env,
+# the .env in this skill's directory, then the keychain item whose service name one of
+# them sets in MACOS_KEYCHAIN_AI_OPENROUTER_KEY. A key the API rejects falls through.
+#
+# Usage: codex-openrouter [codex exec args...]   (model defaults to luna, resolved by bin/model-id)
+set -euo pipefail
+
+# The skill directory, from this file's real path (stock macOS has no realpath).
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+SKILL_DIR="$(cd -P "$(dirname "$src")" && pwd)"
+XDG_ENV_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/cli-openrouter/.env"
+SKILL_ENV_FILE="$SKILL_DIR/.env"
+
+# rejected KEY: true only when the API answers 401/403 for it. A network error
+# counts as accepted, so an outage surfaces in codex rather than here.
+rejected() {
+  OPENROUTER_API_KEY="$1" python3 - <<'PY'
+import os, sys, urllib.error, urllib.request
+req = urllib.request.Request("https://openrouter.ai/api/v1/key",
+                             headers={"Authorization": "Bearer " + os.environ["OPENROUTER_API_KEY"]})
+try:
+    urllib.request.urlopen(req, timeout=10)
+except urllib.error.HTTPError as exc:
+    sys.exit(0 if exc.code in (401, 403) else 1)
+except Exception:
+    sys.exit(1)
+sys.exit(1)
+PY
+}
+
+# file_value FILE VAR: the last VAR= line in FILE, quotes stripped.
+file_value() {
+  [ -r "$1" ] || return 0
+  sed -n "s/^[[:space:]]*$2[[:space:]]*=[[:space:]]*//p" "$1" | tail -n 1 | tr -d '"'"'"'\r'
+}
+
+# env_value VAR: the first non-empty VAR across the XDG and skill-directory .env files.
+env_value() {
+  local v
+  v="$(file_value "$XDG_ENV_FILE" "$1")"
+  [ -n "$v" ] || v="$(file_value "$SKILL_ENV_FILE" "$1")"
+  printf '%s' "$v"
+}
+
+# Lookup order: environment, XDG .env, skill .env, keychain; the first key the API accepts wins.
+key=""
+for source in env xdg skill keychain; do
+  case "$source" in
+    env)  candidate="${AI_OPENROUTER_KEY:-}" ;;
+    xdg)  candidate="$(file_value "$XDG_ENV_FILE" AI_OPENROUTER_KEY)" ;;
+    skill) candidate="$(file_value "$SKILL_ENV_FILE" AI_OPENROUTER_KEY)" ;;
+    keychain) candidate=""
+          service="${MACOS_KEYCHAIN_AI_OPENROUTER_KEY:-$(env_value MACOS_KEYCHAIN_AI_OPENROUTER_KEY)}"
+          [ -n "$service" ] && [ "$(uname -s)" = Darwin ] &&
+            candidate="$(security find-generic-password -a "$USER" -s "$service" -w 2>/dev/null || true)" ;;
+  esac
+  [ -n "$candidate" ] || continue
+  rejected "$candidate" && continue
+  key="$candidate"; break
+done
+unset candidate AI_OPENROUTER_KEY
+[ -n "$key" ] || { echo "codex-openrouter: no accepted AI_OPENROUTER_KEY in the environment, $XDG_ENV_FILE, $SKILL_ENV_FILE, or the keychain item named by MACOS_KEYCHAIN_AI_OPENROUTER_KEY" >&2; exit 2; }
+export OPENROUTER_API_KEY="$key"
+unset key
+
+model=(-m "$(model-id --openrouter luna)")
+for arg in "$@"; do
+  case "$arg" in -m|--model|-m=*|--model=*) model=() ;; esac
+done
+
+exec codex exec \
+  -c model_provider=openrouter \
+  -c 'model_providers.openrouter={name="OpenRouter",base_url="https://openrouter.ai/api/v1",env_key="OPENROUTER_API_KEY",wire_api="responses"}' \
+  "${model[@]}" "$@"

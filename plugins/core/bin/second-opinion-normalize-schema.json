@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "properties": {
+    "is_review": {
+      "type": "boolean",
+      "description": "True only when the supplied text is an actual review reporting on code. False for a refusal, an apology, an error message, a request for more input, or any text that does not judge code."
+    },
+    "reason": {
+      "type": "string",
+      "description": "When is_review is false, what the text turned out to be instead."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["approve", "changes-requested"]
+    },
+    "summary": { "type": "string" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+          "file": { "type": "string" },
+          "line": { "type": "integer" },
+          "title": { "type": "string" },
+          "failure": { "type": "string" },
+          "fix": { "type": "string" },
+          "confidence": { "type": "string", "enum": ["confirmed", "unverified"] },
+          "evidence_needed": { "type": "string" }
+        },
+        "required": ["severity", "file", "line", "title", "failure", "fix", "confidence"]
+      }
+    }
+  },
+  "required": ["is_review", "verdict", "summary", "findings"]
+}

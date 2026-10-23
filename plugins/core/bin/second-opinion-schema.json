@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["approve", "changes-requested"]
+    },
+    "summary": {
+      "type": "string",
+      "description": "One sentence on the overall state of the change. No praise, no restatement of what the code does."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2", "P3"],
+            "description": "P0 data loss, security hole, or breakage on the common path. P1 wrong under a realistic input. P2 maintainability, missing test, contract smell. P3 nit."
+          },
+          "file": { "type": "string", "description": "Repo-relative path." },
+          "line": { "type": "integer", "description": "Line in the new version of the file; 0 when not attributable to one line." },
+          "title": { "type": "string", "description": "The defect in under twelve words." },
+          "failure": { "type": "string", "description": "Concrete inputs or state leading to the wrong behaviour." },
+          "fix": { "type": "string", "description": "The change that resolves it, in one or two sentences." },
+          "confidence": {
+            "type": "string",
+            "enum": ["confirmed", "unverified"],
+            "description": "confirmed when the material on hand proves the defect; unverified when it is suspicion needing evidence not supplied."
+          },
+          "evidence_needed": { "type": "string", "description": "For unverified findings only: what would settle it." }
+        },
+        "required": ["severity", "file", "line", "title", "failure", "fix", "confidence"]
+      }
+    }
+  },
+  "required": ["verdict", "summary", "findings"]
+}

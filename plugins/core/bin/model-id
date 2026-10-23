@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""model-id - resolve a model alias to the exact model id.
+
+    model-id ALIAS               luna -> gpt-6-luna, g-pro -> gemini-4-argon
+    model-id --openrouter ALIAS  luna -> openai/gpt-6-luna
+    model-id --list              every alias and its id
+
+Exact ids live in one place per tool: skills/ai-codex/models.json (GPT models
+run through codex), skills/ai-gemini/models.json (Gemini models run through
+agy), and skills/cli-openrouter/models.json (models reached only through
+OpenRouter, stored as full OpenRouter ids). Everything else - hooks, scripts, skills, agents, the glossary - names a
+model by its alias and resolves it here, so a model upgrade is a one-line edit
+in the owning skill. The OpenRouter id of a GPT model is derived from the same
+entry (openai/<id>), never kept separately. An unknown alias exits 2 with
+nothing on stdout, so a caller can fail open.
+"""
+import json
+import os
+import sys
+
+SKILLS = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, "skills")
+SOURCES = (("ai-codex", "openai/"), ("ai-gemini", "google/"), ("cli-openrouter", ""))
+
+
+def load():
+    table = {}
+    for skill, vendor in SOURCES:
+        path = os.path.join(SKILLS, skill, "models.json")
+        try:
+            with open(path, encoding="utf-8") as handle:
+                for alias, model in json.load(handle).items():
+                    table[alias] = (model, vendor)
+        except (OSError, ValueError) as error:
+            sys.stderr.write("model-id: cannot read %s: %s\n" % (path, error))
+    return table
+
+
+def main(argv):
+    table = load()
+    if argv[1:] == ["--list"]:
+        for alias, (model, _) in sorted(table.items()):
+            print("%-8s %s" % (alias, model))
+        return 0
+    openrouter = len(argv) == 3 and argv[1] == "--openrouter"
+    if not (len(argv) == 2 and not argv[1].startswith("-")) and not openrouter:
+        sys.stderr.write("usage: model-id [--openrouter] ALIAS | --list\n")
+        return 2
+    alias = argv[-1]
+    if alias not in table:
+        sys.stderr.write("model-id: unknown alias %r (known: %s)\n" % (alias, ", ".join(sorted(table))))
+        return 2
+    model, vendor = table[alias]
+    print(vendor + model if openrouter else model)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
