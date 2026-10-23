@@ -51,7 +51,9 @@ compressing existing instruction files). Both follow the rules below.
   the skill does and when to use it, with the trigger phrases the owner actually uses (in
   the owner's language), and what it is not for when a neighbouring skill is easy to confuse. The
   body is the procedure; detail goes to `references/`, one level deep, each pointer saying
-  when to read it. Scripts only for steps that must be deterministic.
+  when to read it. Scripts only for steps that must be deterministic. A skill in a
+  starterkit plugin is public: it carries no personal fact (host, account, private project,
+  private path); a personal part becomes a separate private skill.
 - **Specs (`.agents/specs/`)** — contracts and runbooks: exact commands, values, and
   paths.
 - **Agent definitions** — role, inputs, outputs, and limits; no project facts that belong
