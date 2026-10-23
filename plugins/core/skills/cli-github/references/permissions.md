@@ -1,0 +1,8 @@
+# GitHub operation permissions
+
+- Follow `AGENTS.md` approval requirements. Posting under the user's identity to an external system (including issues, PRs, and review comments) requires prior authorization unless already explicitly authorized for that workflow.
+- Operations that need authorization before they run: `gh pr merge`, `gh pr review` (approve, request changes, comment), `gh release create` (and edit/delete), `gh secret set`, `gh variable set`, `gh workflow run`, `gh repo edit`, `gh repo delete`, and any label or milestone change (`gh label`, `gh issue edit --milestone`, `gh api` calls that do the same). Reading is free; these change what other people see or what CI does.
+- What counts as authorization: an explicit request in the current conversation that names the action (for example "merge the PR", "create the release"), or a documented workflow the owner invoked for that repository (for example the GitHub issue delivery workflow in `references/issues.md`, which authorizes exactly the steps it lists). A general "go ahead", a plan that mentions the step, or a prior authorization for another repository is not authorization.
+- Never self-merge in the GitHub issue delivery workflow.
+- Do not treat GitHub API capabilities or token scopes as permission to delete repositories, alter access, or perform destructive actions.
+- Confirm the target repository, issue/PR, and intended base before outward-facing changes.

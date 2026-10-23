@@ -1,0 +1,3 @@
+# Suggested global CLAUDE.md addition (review before installing)
+
+When you notice a recurring nontrivial multi-step workflow, consult `skill-incubator` to record evidenced occurrences. Before proposing or creating any new skill, check existing skills and incubator candidates for overlap. A candidate requires three distinct confirmed executions, including across projects when the procedure is equivalent. Trial candidates may be applied automatically within existing permissions; only the user can approve promotion or merge into a permanent skill. Review due candidates when consulting the incubator; do not run background checks.

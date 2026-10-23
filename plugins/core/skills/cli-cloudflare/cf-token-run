@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Runs one command with a scoped Cloudflare API token, so wrangler acts with that
+# token's permissions instead of the owner's OAuth login. The token never reaches the
+# caller: it is read here and exported only to CMD.
+#
+# Usage: cf-token-run NAME CMD [ARGS...]
+#   e.g. cf-token-run KV_RO wrangler kv key get --namespace-id=... KEY
+#
+# Token lookup for NAME, first hit wins:
+#   1. the environment variable CLOUDFLARE_API_TOKEN_<NAME>;
+#   2. CLOUDFLARE_API_TOKEN_<NAME>= in ${XDG_CONFIG_HOME:-$HOME/.config}/cli-cloudflare/.env;
+#   3. the same line in the .env of this skill's directory;
+#   4. on macOS, the login-keychain item (account $USER) whose service name
+#      MACOS_KEYCHAIN_CLOUDFLARE_<NAME> sets, in the environment or either .env.
+# CLOUDFLARE_ACCOUNT_ID is taken from the environment or either .env when set.
+set -euo pipefail
+
+# The skill directory, from this file's real path (stock macOS has no realpath).
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+SKILL_DIR="$(cd -P "$(dirname "$src")" && pwd)"
+XDG_ENV_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/cli-cloudflare/.env"
+SKILL_ENV_FILE="$SKILL_DIR/.env"
+
+[ $# -ge 2 ] || { echo "usage: cf-token-run NAME CMD [ARGS...]" >&2; exit 2; }
+name=$1; shift
+case "$name" in *[!A-Z0-9_]*|"") echo "cf-token-run: NAME must be upper-case letters, digits, _" >&2; exit 2 ;; esac
+
+# file_value FILE VAR: the last VAR= line in FILE, quotes stripped.
+file_value() {
+  [ -r "$1" ] || return 0
+  sed -n "s/^[[:space:]]*$2[[:space:]]*=[[:space:]]*//p" "$1" | tail -n 1 | tr -d '"'"'"'\r'
+}
+
+# lookup VAR: the environment, then the XDG .env, then the skill-directory .env.
+lookup() {
+  local v="${!1:-}"
+  [ -n "$v" ] || v="$(file_value "$XDG_ENV_FILE" "$1")"
+  [ -n "$v" ] || v="$(file_value "$SKILL_ENV_FILE" "$1")"
+  printf '%s' "$v"
+}
+
+token=$(lookup "CLOUDFLARE_API_TOKEN_$name")
+if [ -z "$token" ]; then
+  var="MACOS_KEYCHAIN_CLOUDFLARE_$name"
+  service=$(lookup "$var")
+  [ -n "$service" ] || { echo "cf-token-run: no token: CLOUDFLARE_API_TOKEN_$name is not in the environment, $XDG_ENV_FILE or $SKILL_ENV_FILE, and $var names no keychain item" >&2; exit 2; }
+  [ "$(uname -s)" = Darwin ] || { echo "cf-token-run: $var names a keychain item, which needs macOS" >&2; exit 2; }
+  token=$(security find-generic-password -a "$USER" -s "$service" -w 2>/dev/null) ||
+    { echo "cf-token-run: no keychain item for service $service" >&2; exit 2; }
+fi
+
+export CLOUDFLARE_API_TOKEN="$token"
+unset token
+account=$(lookup CLOUDFLARE_ACCOUNT_ID)
+[ -z "$account" ] || export CLOUDFLARE_ACCOUNT_ID="$account"
+exec "$@"
