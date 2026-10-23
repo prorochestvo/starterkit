@@ -6,5 +6,6 @@
   },
   "dependencies": [
     "core"
-  ]
+  ],
+  "version": "202610.001"
 }
