@@ -21,8 +21,8 @@ starterkit` instead of re-copying files.
 | `stack-flutter` | Flutter/Dart conventions: forbidden constructs, state-management discipline, test structure, error contract |
 | `knowledge` | Cross-stack doctrine: DDD (strategic/tactical), SQL antipatterns, PostgreSQL performance, MongoDB modeling, testing, production stability, data systems, software design, and forecasting |
 
-`pipeline` and `core-hooks` declare `core` as a dependency, so installing either one
-installs `core` too.
+`core-hooks` declares `core` as a dependency, so installing it installs `core` too.
+`pipeline` calls into `core` but does not declare it yet; install `core` next to it.
 
 Agents carry only their role doctrine; stack conventions and book knowledge live in
 skills that load on demand (path-scoped or description-matched), so they cost no
