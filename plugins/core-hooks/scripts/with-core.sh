@@ -10,6 +10,11 @@
 # ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json and prepends its
 # bin/ to PATH before it executes the hook with the original stdin.
 #
+# Dedupe: when the user settings.json in the same configuration directory registers a hook
+# command that names a file with the same base name as this hook (for example a copy of
+# review-commit-msg.sh under that directory's hooks/), the hook already runs from the
+# settings and this launcher exits 0 without output, so the hook never runs twice.
+#
 # Entry choice, in order: core@starterkit before core@<other marketplace>; within one
 # key, an entry whose projectPath is $CLAUDE_PROJECT_DIR (local or project scope) before
 # a user-scope entry. An entry counts only when its installPath/bin is a directory.
@@ -29,6 +34,39 @@ fi
 command -v python3 >/dev/null 2>&1 || exit 0
 
 registry="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json"
+settings="$(dirname "$(dirname "$registry")")/settings.json"
+registered="$(python3 - "$settings" "$hook" <<'PY'
+import json, os, shlex, sys
+
+settings, hook = sys.argv[1], sys.argv[2]
+try:
+    with open(settings, encoding="utf-8") as f:
+        events = json.load(f).get("hooks", {})
+except (OSError, ValueError, AttributeError):
+    sys.exit(0)
+if not isinstance(events, dict):
+    sys.exit(0)
+
+for groups in events.values():
+    for group in groups if isinstance(groups, list) else []:
+        handlers = group.get("hooks", []) if isinstance(group, dict) else []
+        for handler in handlers if isinstance(handlers, list) else []:
+            command = handler.get("command") if isinstance(handler, dict) else None
+            if not isinstance(command, str):
+                continue
+            try:
+                words = shlex.split(command)
+            except ValueError:
+                words = command.split()
+            if any(os.path.basename(w) == hook for w in words):
+                print("registered")
+                sys.exit(0)
+PY
+)"
+if [ -n "$registered" ]; then
+  exit 0
+fi
+
 core_bin="$(python3 - "$registry" "${CLAUDE_PROJECT_DIR:-}" <<'PY'
 import json, os, sys
 

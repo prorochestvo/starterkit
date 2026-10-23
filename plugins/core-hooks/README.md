@@ -25,6 +25,11 @@ Each hook runs through `scripts/with-core.sh`, which finds the installed `core` 
 the hook's `PATH`. When `core` is not installed, the hook prints one line naming
 `core@starterkit` and lets the action through.
 
+When the user `settings.json` in the same configuration directory already registers a hook
+command that names a file with the same base name (for example a copy of
+`review-commit-msg.sh` wired in the user settings), `with-core.sh` exits without running the
+plugin's copy, so the hook does not run twice. `scripts/test-with-core.sh` tests these cases.
+
 ## Disabling
 
 - For yourself: `claude plugin disable core-hooks@starterkit` (or `/plugin` in a session),
