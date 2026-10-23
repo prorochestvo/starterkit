@@ -48,7 +48,7 @@ tool's `PATH`. When they are missing, install core@starterkit.
      without asking**, then re-checked by one solo reviewer scoped to the
      changed lines.
    - **Standards audit** — once the parallel reviewers are clean, the
-     `code-standards-auditor` agent checks the change against the owner's R#
+     `core:code-standards-auditor` agent checks the change against the owner's R#
      rule set as its own sequential pass and its grooming is applied directly:
      the goal is code that reads as if the owner wrote it. The owner keeps
      growing that rule set; never skip this audit and never ask whether to run

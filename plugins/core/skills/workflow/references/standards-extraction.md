@@ -6,10 +6,11 @@ one-off for this repo — becomes a numbered `R#` rule. Rules have two homes: th
 for rules about proving that a check or a change did what it claims,
 `workflow/references/verification.md`. Draft a new rule as `R?`; number it only in the
 change that merges it into `common-contracts` or `verification.md` — the next number after
-the highest in the `code-standards-auditor` agent's table, re-read at merge — and replace
+the highest in the `core:code-standards-auditor` agent's table, re-read at merge — and replace
 every `R?` in that change. Whenever I
 correct something, state a preference, or confirm an approach as standard, route it by
 scope: the owner's global `AGENTS.md` (draft only — the owner applies it), a
-`common-contracts` or `verification.md` rule, a plugin or project skill, the project's
+`common-contracts` or `verification.md` rule, a public skill (a starterkit pull request,
+`skill-tuner` step 6), a private or project skill, the project's
 `AGENTS.md`, or agent memory for a machine-only fact. Never delete an existing rule
 without my say-so.

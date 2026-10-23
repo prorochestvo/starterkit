@@ -23,7 +23,7 @@ Once a task is understood and any stated blocker is resolved, run it end to end 
 3. commit;
 4. the parallel reviewers (`references/review.md`); fix their findings; re-run the gate;
    commit;
-5. the standards audit (`code-standards-auditor`, `references/review.md`); fix its
+5. the standards audit (`core:code-standards-auditor`, `references/review.md`); fix its
    findings; re-run the gate; commit;
 6. push (branch rules in `cli-git`);
 7. report once, at the end.

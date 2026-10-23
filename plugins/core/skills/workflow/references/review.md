@@ -5,7 +5,7 @@ A `review` (see the glossary) runs in three steps, in this order:
 1. **Parallel reviewers** — three `pipeline:reviewer` agents launched in one message, one
    each for correctness and tests, security and operations, and architecture and
    performance.
-2. **Standards audit** — the `code-standards-auditor` agent checks the change against my
+2. **Standards audit** — the `core:code-standards-auditor` agent checks the change against my
    `R#` rules.
 3. **External reviewers** — `codex` on `sol` (`ai-codex`), only when the conditions at the
    end of this file hold. Gemini (`g-pro`, through OpenRouter) is no external reviewer; it is
