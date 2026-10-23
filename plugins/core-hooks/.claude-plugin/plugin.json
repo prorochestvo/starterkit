@@ -1,9 +1,10 @@
 {
   "name": "core-hooks",
   "description": "Opt-in hooks on top of core: a commit-message review on integration branches, an advisory quorum that answers multiple-choice questions before they reach the user, and the skill-tuner remark marker. The first two send data to external models; see the plugin README.",
-  "version": "1.0.0",
   "author": {
     "name": "Seilbek"
   },
-  "dependencies": ["core"]
+  "dependencies": [
+    "core"
+  ]
 }

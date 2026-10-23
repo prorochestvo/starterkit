@@ -5,9 +5,10 @@ backlog lifecycle, the development workflow, git and GitHub rules, engineering c
 instruction writing, and skill maintenance; clients for external models; the
 second-opinion review flow; and the `code-standards-auditor` agent.
 
-`pipeline` and `core-hooks` need `core`. Both declare it as a dependency, so installing
-either of them installs `core` as well; disabling or uninstalling `core` afterwards breaks
-their calls into it.
+`pipeline` and `core-hooks` need `core`. `core-hooks` declares it as a dependency, so
+installing `core-hooks` installs `core` as well; `pipeline` does not declare it yet, so
+install `core` next to `pipeline`. Disabling or uninstalling `core` afterwards breaks their
+calls into it.
 
 ## Contents
 
@@ -21,9 +22,8 @@ Skills are listed as `core:<name>`. Instructions in this and the other starterki
 name them by the bare name (`task-management`), which resolves to `core:<name>` when no
 skill of that name is installed outside the plugin.
 
-These files are published from the maintainer's own configuration by an export script. A
-direct edit in this directory stops the next export until the change is carried back to
-that source, so propose changes through an issue or a pull request that says so.
+This directory is the only copy of these files. Changes go through a pull request
+against this repository.
 
 ## Data sent to external services
 
@@ -31,9 +31,12 @@ that source, so propose changes through an issue or a pull request that says so.
   `--full` or `--target files:...`) to external models: OpenRouter by default, whose tier
   aliases include OpenAI's Codex-family GPT models, and Google's Gemini through the `agy`
   client when `--model` is given. Nothing is sent unless the script is run.
-- `openrouter-cli` and `codex-openrouter` send their prompts to OpenRouter; the `ai-codex`,
-  `ai-gemini` and `ai-claude` skills call the `codex`, `agy` and `claude` command-line
-  clients, which send their prompts to OpenAI, Google and Anthropic.
+- The `cli-openrouter` skill and its `openrouter-cli` and `codex-openrouter` helpers send
+  their prompts to OpenRouter.
+- The `ai-claude`, `ai-gemini` and `ai-codex` skills call the `claude`, `agy` and `codex`
+  command-line clients, which send their prompts to Anthropic, Google and OpenAI.
+- Each of these runs only when a skill or a command invokes it; installing the plugin sends
+  nothing.
 - `cli-cloudflare` acts on the Cloudflare account its token belongs to.
 
 ## Keys
