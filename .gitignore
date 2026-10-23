@@ -15,3 +15,18 @@
 
 # Books are local raw material for the knowledge skills — never committed
 books/**
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Keys: a skill keeps only its env.example in the repository
+**/.env
+**/.env.*
+!**/env.example
+
+# Claude Code state written into a checkout
+**/.claude/agent-memory/
+**/.claude/*.local.*
+plugins/**/.claude/
+runtime-state/

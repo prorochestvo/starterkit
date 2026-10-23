@@ -1,6 +1,6 @@
 ---
 name: working-agreement
-description: The canonical plan-first pipeline - plan with its own review cycle (parallel reviewers, then gemini/codex), implement, gate, staged review (parallel reviewers, standards audit, external reviewers), one-commit completion with cleanup - plus per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/YYMMDD.NNNN.slug.md, recording or triaging a side-question in .agents/plans/backlog/ (the plan and backlog rules themselves live in the global task-management skill), invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many parallel reviewers to run.
+description: The canonical plan-first pipeline - plan with its own review cycle (parallel reviewers, then gemini/codex), implement, gate, staged review (parallel reviewers, standards audit, external reviewers), one-commit completion with cleanup - plus per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/YYMMDD.NNNN.slug.md, recording or triaging a side-question in .agents/plans/backlog/ (the plan and backlog rules themselves live in the task-management skill), invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many parallel reviewers to run.
 ---
 
 # Working agreement
@@ -8,6 +8,13 @@ description: The canonical plan-first pipeline - plan with its own review cycle 
 The procedure every non-trivial change runs through, and the contract the four
 pipeline agents share. A project's own `CLAUDE.md` restates none of it — it
 carries only its delta (gate command, focus override, branching).
+
+The skills this agreement and the pipeline agents name by their bare name
+(`task-management`, `workflow`, `cli-git`, `ai-gemini`, `ai-codex`, ...) and the
+commands they call (`plan-name.sh`, `model-id`, `second-opinion.sh`,
+`codex-limits.py`, ...) come from the `core` plugin, which `pipeline` depends on:
+plugin users find these skills as `core:<name>`, and the commands on the Bash
+tool's `PATH`. When they are missing, install core@starterkit.
 
 ## The pipeline
 
@@ -52,7 +59,7 @@ carries only its delta (gate command, focus override, branching).
      outside verdicts into one ranked report.
 
      ```sh
-     ~/.claude/bin/second-opinion.sh --target branch --question '<the finding>'
+     second-opinion.sh --target branch --question '<the finding>'
      ```
 
      `--target` also takes `working`, `staged`, `commit:REF`, `files:A,B,C`;
@@ -121,7 +128,7 @@ code, so implementation spends the same weekly allowance as the external
 review. When that allowance runs out, the same `luna` keeps writing
 through OpenRouter (pay-per-token, about a cent per small task, under the
 key's $5 monthly cap); haiku is the last resort behind it. Check the plan
-with `~/.claude/bin/codex-limits.py`. The
+with `codex-limits.py`. The
 week of 2026-09-13 showed the allowance exhausted on day one, a reading
 possibly polluted by free-tier usage; as of 2026-10-04 the weekly window
 stood at 2% used.
@@ -174,8 +181,8 @@ The rules for plans and the backlog — the tree, the naming
 (`YYMMDD.NNNN.slug.md` for plans, `YYMMDD.P.NNNN.slug.md` for backlog entries,
 prefixed with the origin plan's id), the plan template, review before
 implementation, capture, triage, assessment, completion, and the legacy shapes —
-live in ONE place: the global `task-management` skill
-(`~/.claude/skills/task-management/`, references `plans.md` and `backlog.md`).
+live in ONE place: the `task-management` skill (references `plans.md` and
+`backlog.md`).
 Load it for any of those; this skill does not restate them. In short: one plan
 per concern; verify completion against the code, not the plan's header; capture
 a side-question instantly as one backlog file (prefixed with the active plan's

@@ -32,11 +32,13 @@ You are a senior software engineer. Your role is **implementation only** — cle
 
 ## Who writes the code
 
-1. **Codex first.** Unless Codex is known to be out of quota (`~/.claude/bin/codex-limits.py`, when present, prints `LIMIT REACHED`), delegate the task from the repository root:
+The helpers below (`model-id`, `codex-limits.py`, `codex-openrouter`, `openrouter-cli`) are commands of the `core` plugin, on the Bash tool's `PATH`. If `command -v model-id` finds nothing, stop and report: install core@starterkit.
+
+1. **Codex first.** Unless Codex is known to be out of quota (`codex-limits.py`, when present, prints `LIMIT REACHED`), delegate the task from the repository root:
 
    ```sh
    codex exec --ephemeral --skip-git-repo-check -s workspace-write -C "$(git rev-parse --show-toplevel)" \
-     -m "$(~/.claude/bin/model-id luna)" -c model_reasoning_effort="medium" "$TASK" \
+     -m "$(model-id luna)" -c model_reasoning_effort="medium" "$TASK" \
      -o "$TMPDIR/codex-out.txt" > "$TMPDIR/codex.log" 2>&1
    ```
 
@@ -44,12 +46,12 @@ You are a senior software engineer. Your role is **implementation only** — cle
 2. **Fallback 1: the same model through OpenRouter.** If `codex-limits.py` already said `LIMIT REACHED`, or Codex exits non-zero and `codex.log` shows a quota or rate limit (`usage limit`, `rate limit`, `429`, `Too Many Requests`) or a ChatGPT-plan auth failure, rerun the identical task through the OpenRouter provider — same harness, same `luna`, billed to the OpenRouter key instead of the plan:
 
    ```sh
-   ~/.claude/skills/cli-openrouter/codex-openrouter --ephemeral --skip-git-repo-check -s workspace-write \
+   codex-openrouter --ephemeral --skip-git-repo-check -s workspace-write \
      -C "$(git rev-parse --show-toplevel)" -c model_reasoning_effort="medium" "$TASK" \
      -o "$TMPDIR/codex-out.txt" > "$TMPDIR/codex.log" 2>&1
    ```
 
-   The wrapper reads the key itself; never source or print the `.env`. Review any partial diff the first run left before rerunning. The key is capped at $5/month; `~/.claude/skills/cli-openrouter/openrouter-cli budget` shows what is left.
+   The wrapper reads the key itself; never source or print the `.env`. Review any partial diff the first run left before rerunning. The key is capped at $5/month; `openrouter-cli budget` shows what is left.
 3. **Fallback 2: you write it.** Only when the OpenRouter run also fails on credit, quota, rate limit, or auth (`402`, `429`, `insufficient credits`, `limit`), when the wrapper exits 2 (no key), or when the `codex` binary itself is missing, implement the task yourself under the doctrine above, again reviewing any partial diff first. Any other Codex failure, on either lane, is read like a red gate, not a reason to switch engines.
 4. **Verify, whoever wrote it.** Read the diff (`git diff`), check it against the task and the doctrine, then run the project's gate yourself — Codex's sandbox has no network, so its own test run proves less. A failure goes back to Codex with the exact output, at most twice; after that, fix it yourself or hand the red tree to `testdoctor`.
 

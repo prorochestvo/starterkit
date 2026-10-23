@@ -14,10 +14,15 @@ starterkit` instead of re-copying files.
 
 | Plugin | Contents |
 |--------|----------|
+| `core` | Shared agent tooling the other plugins build on: plan and backlog lifecycle (`task-management`), development workflow, git and GitHub rules, engineering contracts, instruction writing, skill maintenance, external-model clients, the `second-opinion.sh` review flow, and the `code-standards-auditor` agent. `second-opinion.sh` sends diffs to external models (OpenRouter, optionally Gemini); see [its README](./plugins/core/README.md) for what is sent where and where keys are looked up |
+| `core-hooks` | **Opt-in**, never enabled by `install.sh` or the templates. A commit-message review on integration branches and an advisory quorum that answers multiple-choice questions before they reach you, both sending that text to OpenAI, Anthropic and OpenRouter; answers the quorum agrees on are applied without asking. See [its README](./plugins/core-hooks/README.md), including how to disable it |
 | `pipeline` | Four stack-agnostic agents — `architect` (planning), `engineer` (implementation), `reviewer` (three parallel reviewers, one focus each), `testdoctor` (red-test triage) — plus the plan-lifecycle, permission-sync, and onboarding skills |
 | `stack-go` | Go conventions (style, declaration order, code organization, error contract, test structure) and Go knowledge distilled from *100 Go Mistakes*, *Effective Concurrency in Go*, and *Efficient Go* |
 | `stack-flutter` | Flutter/Dart conventions: forbidden constructs, state-management discipline, test structure, error contract |
 | `knowledge` | Cross-stack doctrine: DDD (strategic/tactical), SQL antipatterns, PostgreSQL performance, MongoDB modeling, testing, production stability, data systems, software design, and forecasting |
+
+`core-hooks` declares `core` as a dependency, so installing it installs `core` too.
+`pipeline` calls into `core` but does not declare it yet; install `core` next to it.
 
 Agents carry only their role doctrine; stack conventions and book knowledge live in
 skills that load on demand (path-scoped or description-matched), so they cost no

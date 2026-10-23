@@ -1,0 +1,48 @@
+{
+  "description": "Commit-message review on integration branches, advisory question quorum, and the skill-tuner remark marker. Each hook runs through scripts/with-core.sh, which puts the core plugin's bin/ on PATH.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/with-core.sh\" review-commit-msg.sh",
+            "if": "Bash(git commit *)",
+            "timeout": 150,
+            "statusMessage": "Reviewing commit message..."
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/with-core.sh\" review-commit-msg.sh",
+            "if": "Bash(gh pr merge *)",
+            "timeout": 150,
+            "statusMessage": "Reviewing squash message..."
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/with-core.sh\" question-quorum.py",
+            "timeout": 180,
+            "statusMessage": "Asking advisor quorum first..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/with-core.sh\" userprompt-remark-marker.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

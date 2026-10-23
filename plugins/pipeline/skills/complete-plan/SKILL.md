@@ -7,9 +7,10 @@ argument-hint: <YYMMDD.NNNN | NNNN | slug | filename>
 Move the active plan identified by `$ARGUMENTS` from `.agents/plans/` to
 `.agents/plans/completed/`.
 
-The rules — gates, the fixed plan id, legacy shapes — are the global `task-management`
-skill's (`~/.claude/skills/task-management/references/plans.md`, section "Completing a
-plan"); this skill only runs them in order.
+The rules — gates, the fixed plan id, legacy shapes — are the `task-management`
+skill's (its reference `plans.md`, section "Completing a plan"); this skill only runs
+them in order. If the `task-management` skill cannot be loaded, stop and report:
+install core@starterkit.
 
 Steps:
 
