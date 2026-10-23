@@ -6,7 +6,7 @@
 # - push to main: re-stamp the open same-repository PRs, because a merge may have taken the
 #   number they carry. The base is merged into the PR branch first.
 #
-# Pushes made with GITHUB_TOKEN start no new workflow run, so the bot never loops.
+# The bot commit carries [skip ci]: without it, its push starts a run that waits for approval.
 name: plugin-version
 
 on:
@@ -44,7 +44,7 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -qam "chore(release): stamp plugin versions"
+            git commit -qam "chore(release): stamp plugin versions [skip ci]"
             git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
           fi
       - name: Check
@@ -84,6 +84,6 @@ jobs:
             if git diff --quiet; then
               continue # its number is still the next one; leave the branch alone
             fi
-            git commit -qam "chore(release): stamp plugin versions"
+            git commit -qam "chore(release): stamp plugin versions [skip ci]"
             git push -q origin "HEAD:$branch"
           done
