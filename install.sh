@@ -4,13 +4,14 @@
 # Usage:
 #   ./install.sh <stack> <target-dir> [--force]
 #
-#   <stack>       — go | flutter
+#   <stack>       — go | flutter | swift
 #   <target-dir>  — destination project root (must exist)
 #   --force       — overwrite an existing AGENTS.md / CLAUDE.md / .claude/settings.json
 #
 # Copies the stack's AGENTS.md template (CLAUDE.md links to it) and .claude/settings.json (permission
 # allowlist + starterkit marketplace wiring + enabled plugins) and creates the
-# .agents/ directory layout. Agents, skills, and doctrine are NOT copied — they
+# .agents/ directory layout. A stack without a stack plugin (swift) carries its
+# toolchain allowlist in its template's settings.json instead of a fragment. Agents, skills, and doctrine are NOT copied — they
 # ship via the plugin marketplace and update centrally.
 
 set -euo pipefail
@@ -19,7 +20,7 @@ STARTER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
   cat <<EOF
-Usage: $0 <go|flutter> <target-dir> [--force]
+Usage: $0 <go|flutter|swift> <target-dir> [--force]
 EOF
 }
 
@@ -33,8 +34,8 @@ TARGET="$2"
 FORCE="${3:-}"
 
 case "$STACK" in
-  go|flutter) ;;
-  *) echo "error: unknown stack '$STACK' (expected go or flutter)" >&2; usage; exit 1 ;;
+  go|flutter|swift) ;;
+  *) echo "error: unknown stack '$STACK' (expected go, flutter, or swift)" >&2; usage; exit 1 ;;
 esac
 
 if [[ ! -d "$TARGET" ]]; then
@@ -74,14 +75,19 @@ mkdir -p "$TARGET/.claude"
 # Assemble settings.json: wiring template + canonical permission fragments.
 # The fragments in plugins/pipeline/skills/sync-permissions/ are the single
 # source of truth; the pipeline:sync-permissions skill re-merges them later.
+# A stack with no fragment (no stack plugin) contributes the permissions block
+# of its template instead; both sources are merged when both exist.
 FRAGMENTS="$STARTER_ROOT/plugins/pipeline/skills/sync-permissions"
 python3 - "$SRC/settings.json" "$FRAGMENTS/core.json" "$FRAGMENTS/stack-$STACK.json" "$TARGET/.claude/settings.json" <<'PY'
-import json, sys
+import json, os, sys
 wiring, core, stack, out = sys.argv[1:5]
 settings = json.load(open(wiring))
 perms = {"allow": [], "deny": []}
-for path in (core, stack):
-    frag = json.load(open(path))
+frags = [json.load(open(core))]
+if os.path.exists(stack):
+    frags.append(json.load(open(stack)))
+frags.append(settings.get("permissions", {}))
+for frag in frags:
     for key in perms:
         perms[key] += [e for e in frag.get(key, []) if e not in perms[key]]
 settings["permissions"] = perms
@@ -112,13 +118,20 @@ elif [ ! -e "$TARGET/.claude/skills" ]; then
   echo "  + .agents/skills/, .claude/skills -> ../.agents/skills"
 fi
 
+# Only stacks with a stack plugin list it in the manual install line.
+PLUGINS="pipeline@starterkit"
+if [[ -f "$FRAGMENTS/stack-$STACK.json" ]]; then
+  PLUGINS="$PLUGINS stack-$STACK@starterkit"
+fi
+PLUGINS="$PLUGINS knowledge@starterkit"
+
 cat <<EOF
 
 Done. Next steps:
   1. cd $TARGET && claude
   2. Approve the starterkit marketplace / plugin installation when prompted.
      (If no prompt appears: /plugin marketplace add prorochestvo/starterkit
-      then /plugin install pipeline@starterkit stack-$STACK@starterkit knowledge@starterkit)
+      then /plugin install $PLUGINS)
   3. Run /pipeline:onboard — it verifies the wiring and walks you through
      filling the AGENTS.md placeholders.
   4. Use the pipeline:new-plan skill to create your first plan.
