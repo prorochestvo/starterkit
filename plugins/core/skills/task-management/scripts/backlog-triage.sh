@@ -6,6 +6,7 @@
 #            or its filename; the name then starts with '<id>-'
 #   --gate   -f DRAFT [-d DIR]              is the entry needed at all? before it is written
 #   --list   [-d DIR]                       open entries, one line each, files unread
+#   --stale  [N] [-d DIR]                   open entries, longest ungroomed first (N: first N)
 #   --assess -f FILE                        external judgement, before work starts
 #
 # WHY THE SPLIT. An entry is captured the moment a thought surfaces - one file,
@@ -24,7 +25,7 @@
 # with no verdict it says so and keeps the entry's current priority.
 set -uo pipefail
 
-MODE=""; TITLE=""; PRIORITY=""; DIR=""; FILE=""; PLAN=""; ESCALATE=0
+MODE=""; TITLE=""; PRIORITY=""; DIR=""; FILE=""; PLAN=""; ESCALATE=0; COUNT=0
 while [ $# -gt 0 ]; do
   case "$1" in
     -t|--title|-p|--priority|-d|--dir|-f|--file|-P|--plan)
@@ -32,13 +33,15 @@ while [ $# -gt 0 ]; do
   esac
   case "$1" in
     --name|--assess|--gate|--list) MODE="${1#--}"; shift ;;
+    --stale)         MODE=stale; shift
+                     case "${1:-}" in ""|*[!0-9]*) ;; *) COUNT="$1"; shift ;; esac ;;
     -t|--title)      TITLE="${2:-}"; shift 2 ;;
     -p|--priority)   PRIORITY="$(printf '%s' "${2:-}" | tr '[:lower:]' '[:upper:]' | cut -c1)"; shift 2 ;;
     -d|--dir)        DIR="${2:-}"; shift 2 ;;
     -P|--plan)       PLAN="${2:-}"; shift 2 ;;
     -f|--file)       FILE="${2:-}"; shift 2 ;;
     --escalate)      ESCALATE=1; shift ;;
-    -h|--help)       sed -n '2,25p' "$0"; exit 0 ;;
+    -h|--help)       sed -n '2,26p' "$0"; exit 0 ;;
     *) printf 'unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
 done
@@ -119,6 +122,38 @@ bounded() {
 
 # ---------------------------------------------------------------- --list
 if [ "$MODE" = list ]; then open_list; exit 0; fi
+
+# ---------------------------------------------------------------- --stale
+# Grooming order: the entry groomed longest ago comes first. An entry carries
+# "- groomed: YYYY-MM-DD HH:MMZ" once a grooming pass kept it; one never groomed
+# counts from the date in its name. Prints "<groomed or never>  <name>  <title>".
+if [ "$MODE" = stale ]; then
+  d="$(backlog_dir)"
+  [ -d "$d" ] || exit 0
+  python3 - "$d" "$COUNT" <<'PY'
+import os, re, sys
+d, count = sys.argv[1], int(sys.argv[2])
+rows = []
+for n in sorted(os.listdir(d)):
+    p = os.path.join(d, n)
+    if not n.endswith(".md") or not os.path.isfile(p):
+        continue
+    with open(p, encoding="utf-8") as fh:
+        text = fh.read()
+    title = next((l.lstrip("#").strip() for l in text.splitlines() if l.startswith("#")), "")
+    m = re.search(r"^- groomed: (\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})Z", text, re.M)
+    if m:
+        key = shown = "".join(m.groups())
+    else:
+        r = re.match(r"^(?:(?:\d{6}\.\d{4}|\d{3})-)?(\d{6})\.", n)
+        key, shown = ("20" + r.group(1) + "0000") if r else "0" * 12, "never"
+    rows.append((key, n[:-3], shown, title))
+rows.sort()
+for _, name, shown, title in rows[:count or None]:
+    print("%-12s  %s  %s" % (shown, name, title))
+PY
+  exit $?
+fi
 
 # ---------------------------------------------------------------- --gate
 if [ "$MODE" = gate ]; then
@@ -201,7 +236,7 @@ PY
 fi
 
 # ---------------------------------------------------------------- --assess
-[ "$MODE" = assess ] || { echo 'backlog-triage: pass --name, --gate, --list or --assess' >&2; exit 2; }
+[ "$MODE" = assess ] || { echo 'backlog-triage: pass --name, --gate, --list, --stale or --assess' >&2; exit 2; }
 [ -n "$FILE" ] && [ -r "$FILE" ] || { echo 'backlog-triage --assess: -f FILE must be readable' >&2; exit 2; }
 
 CURRENT="$(basename "$FILE" | sed -nE 's/^(([0-9]{6}\.[0-9]{4}|[0-9]{3})-)?[0-9]{6}\.([HML])\..*/\3/p')"

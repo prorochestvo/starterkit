@@ -100,48 +100,62 @@ entry silently, and never turn triage into one question per item — batch it. G
 
 ## Grooming
 
-"Груминг беклога" ("groom the backlog") means: check every open entry for relevance and
-close the stale ones. **Decide each entry yourself, ask the owner nothing, accept nothing,
-and report at the end** — an entry that should become work stays open and is named in the
-report. Honour a batch size or a pause the owner sets; otherwise run to the end.
+"Груминг беклога" ("groom the backlog") finds open entries that are stale or no longer valid
+and closes them, so nobody spends time on them later. An entry is a by-product of other work:
+judge it with suspicion and keep it only while it names a concrete, current failure, risk, or
+owner request. **Decide each entry yourself, ask the owner nothing, accept nothing, and report
+at the end** — an entry that should become work stays open and is named in the report.
+
+**Order.** A groomed entry carries `- groomed: YYYY-MM-DD HH:MMZ` (UTC, to the minute) under
+its `raised:` line, rewritten on every pass that keeps it. `backlog-triage.sh --stale [N]`
+lists the open entries, the longest ungroomed first; an entry never groomed counts from the
+date in its name. "Груминг <project>" takes every open entry in that order; "груминг N
+файлам" ("groom N entries") takes the first N.
+
+**Usage.** Before the pass and before each entry, check the weekly usage of the vendors the
+gate calls. At 70% or more on either, do not start, or stop as for an outage — unless the
+owner explicitly allowed grooming past 70% and named the ceiling; then stop at that ceiling.
 
 1. Work on a new branch `chore/backlog-grooming` from the tip of the integration branch, in
-   its own worktree (the `workflow` preflight rule). Build the entry list from
-   `backlog-triage.sh --list` when the pass starts; before step 7, merge the integration
-   branch into `chore/backlog-grooming` and handle the entries it added as one extra batch.
-2. One agent, one entry at a time. Run each gate as its own foreground command with a
-   600-second timeout, not in the background as at capture, and apply its answer before
-   the next entry; a loop of gates outlives the command timeout and loses that order.
+   its own worktree (the `workflow` preflight rule), with the list from `--stale [N]` taken
+   when the pass starts. Before step 7, merge the integration branch into the branch.
+2. Run in the background: one agent, one entry at a time. Run each gate as its own foreground
+   command with a 600-second timeout, and apply its answer before the next entry.
 3. For each entry:
-   - already settled — resolved in the code, by a merged commit, or by a later plan or
-     decision, checked against the code and `git log` → close it as `done` or `dropped`
-     (see the endings);
-   - otherwise gate it and, unless the gate is weak (step 4), apply the answer:
+   - settled — resolved in the code, by a merged commit, or by a later plan or decision,
+     checked against the code and `git log` → close it as `done` or `dropped`;
+   - outdated — it cites files, code, plans, or facts that have since changed: if the concern
+     still holds, rewrite the entry to the current state (same name, `raised:` and
+     `decision: open`, plus a dated note saying what was rewritten); otherwise drop it;
+   - otherwise gate it:
 
      ```sh
      backlog-triage.sh --gate -f .agents/plans/backlog/<entry>.md
      ```
 
-     `create: true` keeps it open with its `decision:` line unchanged; `create: false`
-     drops it with the gate's reason. With a `duplicate_of`, it is dropped naming that
-     entry only when it is a different entry open at the top level, otherwise it stays open
-     as a weak gate; a useful detail of the dropped entry goes into the open one as a dated
-     note. When unsure, keep.
-4. A weak gate keeps the entry open and is named in the report: `votes.sol` or
-   `votes.opus` is null, `votes.fable` is null after a sol/opus split, a vote's `reason`
-   starts with `self-duplicate vote ignored`, or `duplicate_of` names an entry that is not
-   open at the top level. Two weak gates in a row from a reviewer outage (usage limits, a
-   failing call): stop, commit, and finish with step 7, naming the entry where the pass
-   stopped.
+     `create: false` drops it with the gate's reason. `create: true` keeps it only when it
+     names a concrete, current failure, risk, or owner request; otherwise drop it as a
+     by-product with no current need. With a `duplicate_of`, drop it naming that entry only
+     when that is a different entry open at the top level, and move a useful detail into the
+     open one as a dated note.
+
+   When unsure, drop: a drop with a reason stays in `history/` and can be reopened. Set the
+   `groomed:` line on every entry the pass keeps or rewrites.
+4. A weak gate keeps the entry open without a new `groomed:` line, so it comes first next
+   time, and is named in the report: `votes.sol` or `votes.opus` is null, `votes.fable` is
+   null after a sol/opus split, a vote's `reason` starts with `self-duplicate vote ignored`,
+   or `duplicate_of` names an entry that is not open at the top level. Two weak gates in a
+   row from a reviewer outage (usage limits, a failing call): stop, commit, and finish with
+   step 7, naming the entry where the pass stopped.
 5. **Never re-gate an entry from `history/`**: the reviewers read the repository, find the
    recorded decision and the commit that made it, and repeat it. A closed entry is
    reopened only on new evidence or the owner's word.
 6. Commit every 10–20 entries, staging only `.agents/plans/backlog`; commit messages
    follow the `cli-git` commits rule.
 7. At the end, squash-merge the branch into the integration branch under the project's
-   branch rules, push, and delete the branch and the worktree. Report the kept / done /
-   dropped counts, one line per closed entry with its reason, the weak gates, and any drop
-   the owner may want to reverse — for example one closed on a plan's decision, not a gate.
+   branch rules, push, and delete the branch and the worktree. Report the kept / rewritten /
+   done / dropped counts, one line per closed or rewritten entry with its reason, the weak
+   gates, and the usage at the end.
 
 ## Assessment, before an entry becomes work
 
