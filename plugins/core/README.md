@@ -5,9 +5,8 @@ backlog lifecycle, the development workflow, git and GitHub rules, engineering c
 instruction writing, and skill maintenance; clients for external models; the
 second-opinion review flow; and the `code-standards-auditor` agent.
 
-`pipeline` and `core-hooks` need `core`. `core-hooks` declares it as a dependency, so
-installing `core-hooks` installs `core` as well; `pipeline` does not declare it yet, so
-install `core` next to `pipeline`. Disabling or uninstalling `core` afterwards breaks their
+`pipeline` and `core-hooks` need `core` and declare it as a dependency, so installing
+either installs `core` as well. Disabling or uninstalling `core` afterwards breaks their
 calls into it.
 
 ## Contents
