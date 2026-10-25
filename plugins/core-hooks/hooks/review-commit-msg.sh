@@ -21,9 +21,14 @@ set -u
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
 
 payload=$(cat)
-cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
+# Read a dotted field of the hook payload; python3 is required by with-core.sh anyway.
+field() { printf '%s' "$payload" | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+for k in sys.argv[1].split("."): d=d.get(k) if isinstance(d,dict) else None
+print(d if isinstance(d,str) else "", end="")' "$1" 2>/dev/null; }
+cmd=$(field tool_input.command) || exit 0
 [ -n "$cmd" ] || exit 0
-cwd=$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)
+cwd=$(field cwd)
 [ -n "$cwd" ] || cwd=$PWD
 
 # gh pr merge --squash: its subject and body become the commit on the base
