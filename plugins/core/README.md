@@ -14,7 +14,7 @@ calls into it.
 | Kind | Items |
 |------|-------|
 | Skills | `task-management`, `workflow`, `writing-instructions`, `cli-git`, `cli-github`, `common-contracts`, `skill-tuner`, `skill-incubator`, `ai-claude`, `ai-codex`, `ai-gemini`, `cli-openrouter`, `cli-cloudflare` |
-| Helpers (`bin/`, on the Bash tool's `PATH` while the plugin is enabled) | `model-id`, `second-opinion.sh`, `codex-limits.py`, `plan-name.sh`, `backlog-triage.sh`, `openrouter-cli`, `codex-openrouter` |
+| Helpers (`bin/`, on the Bash tool's `PATH` while the plugin is enabled) | `model-id`, `second-opinion.sh`, `codex-limits.py`, `plan-name.sh`, `backlog-triage.sh`, `openrouter-cli` |
 | Agents | `code-standards-auditor` |
 
 Skills are listed as `core:<name>`. Instructions in this and the other starterkit plugins
@@ -30,8 +30,8 @@ against this repository.
   `--full` or `--target files:...`) to external models: OpenRouter by default, whose tier
   aliases include OpenAI's Codex-family GPT models, and Google's Gemini through the `agy`
   client when `--model` is given. Nothing is sent unless the script is run.
-- The `cli-openrouter` skill and its `openrouter-cli` and `codex-openrouter` helpers send
-  their prompts to OpenRouter.
+- The `cli-openrouter` skill and its `openrouter-cli` helper send their prompts to
+  OpenRouter.
 - The `ai-claude`, `ai-gemini` and `ai-codex` skills call the `claude`, `agy` and `codex`
   command-line clients, which send their prompts to Anthropic, Google and OpenAI.
 - Each of these runs only when a skill or a command invokes it; installing the plugin sends
@@ -41,7 +41,7 @@ against this repository.
 ## Keys
 
 Keys are never stored inside the plugin: the plugin cache is replaced on every version
-update. `openrouter-cli`, `codex-openrouter` and `cli-cloudflare`'s `cf-token-run` look a key
+update. `openrouter-cli` and `cli-cloudflare`'s `cf-token-run` look a key
 up in this order:
 
 1. the environment variable;

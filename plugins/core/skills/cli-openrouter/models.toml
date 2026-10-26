@@ -1,0 +1,110 @@
+# Curated model catalog. Country codes are ISO 3166-1 alpha-3 (lowercase),
+# indicating developer origin, not API hosting location.
+# destination describes intended uses; cost_tier is an approximate owner-editable category.
+# cost_tier: cheap | moderate | expensive. Missing cost_tier means not assessed.
+# IDs are copied from the supplied catalog; empty IDs must be verified before use.
+# Listing a model does not authorize paid OpenRouter calls.
+
+[models.usa.anthropic.opus]
+name = "Claude Opus 4.6"
+id = ""
+destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+cost_tier = "expensive"
+
+[models.usa.openai.sol]
+name = "OpenAI Sol"
+id = ""
+destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+cost_tier = "moderate"
+
+[models.usa.openai.lumi]
+name = "OpenAI Lumi"
+id = ""
+destination = ["development", "code-review", "reasoning"]
+
+[models.usa.google.gemini_pro]
+name = "Gemini 2.5 Pro"
+id = ""
+destination = ["large-context", "code-review", "alternative-review"]
+cost_tier = "moderate"
+
+[models.usa.xai.grok]
+name = "Grok 4.7"
+id = "x-ai/grok-4.7"
+destination = ["architecture", "alternative-review", "reasoning"]
+cost_tier = "moderate"
+
+[models.chn.alibaba.qwen38_max]
+name = "Qwen3.8 Max"
+id = ""
+destination = ["development", "architecture", "code-review"]
+cost_tier = "moderate"
+
+[models.chn.moonshot.kimi_k3]
+name = "Kimi K3"
+id = ""
+destination = ["large-context", "reasoning", "code-review"]
+cost_tier = "moderate"
+
+[models.chn.deepseek.deepseek_v4_pro]
+name = "DeepSeek V4 Pro"
+id = ""
+destination = ["code-review", "reasoning", "architecture"]
+cost_tier = "cheap"
+
+[models.usa.meta.muse]
+name = "Muse Spark Open"
+id = "meta/muse-wonder"
+destination = ["alternative-review", "architecture"]
+cost_tier = "moderate"
+
+[models.chn.alibaba.qwen3_max]
+name = "Qwen3 Max"
+id = ""
+destination = ["development", "code-review", "reasoning"]
+cost_tier = "moderate"
+
+[models.chn.moonshot.kimi_k25]
+name = "Kimi K2.5"
+id = ""
+destination = ["large-context", "dependencies", "code-review"]
+cost_tier = "cheap"
+
+[models.chn.deepseek.deepseek_v32]
+name = "DeepSeek V3.2"
+id = ""
+destination = ["code-review", "mechanical"]
+cost_tier = "cheap"
+
+[models.unk.unknown.reflection_beam]
+name = "Reflection Beam 1.0"
+id = ""
+destination = ["reasoning", "code-review"]
+cost_tier = "cheap"
+
+[models.chn.alibaba.qwen36_flash]
+name = "Qwen3.6 Flash"
+id = ""
+destination = ["quick-check", "mechanical"]
+cost_tier = "cheap"
+
+[models.chn.deepseek.deepseek_flash]
+name = "DeepSeek Flash Latest"
+id = ""
+destination = ["quick-check", "mechanical"]
+cost_tier = "cheap"
+
+[models.usa.anthropic.fable]
+name = "Fable"
+id = ""
+destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+
+[models.usa.openai.astra]
+name = "Astra"
+id = ""
+destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+
+[models.chn.deepseek.deepseek_reasoner]
+name = "DeepSeek Reasoner"
+id = ""
+destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
