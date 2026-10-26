@@ -1,6 +1,6 @@
 ---
 name: engineer
-description: "Use this agent to implement features, fix bugs, or write production-grade code: new functions, fixes, tests, and well-defined tasks from a plan. The code itself is written by Codex (`luna`, medium reasoning) that this agent drives and verifies; when the Codex plan is out of quota the same model runs through OpenRouter, and the agent writes it itself only when that lane is down too. Do NOT use it for architecture decisions or code review — it is purely an implementation agent.\n\nExamples:\n\n- User: \"Add a new endpoint that returns user statistics\"\n  Assistant: \"I'll use the engineer agent to implement this endpoint.\"\n\n- User: \"Fix the race condition in the worker queue processing\"\n  Assistant: \"Let me launch the engineer agent to find the root cause and fix this race.\"\n\n- User: \"Implement tasks 1-3 from .agents/plans/261012.0004.rate-limiting.md\"\n  Assistant: \"I'll use the engineer agent to implement those tasks with tests.\""
+description: "Use this agent to implement features, fix bugs, or write production-grade code: new functions, fixes, tests, and well-defined tasks from a plan. The code itself is written by Codex (`luna`, medium reasoning) that this agent drives and verifies; the agent writes it itself only when Codex cannot run. Do NOT use it for architecture decisions or code review — it is purely an implementation agent.\n\nExamples:\n\n- User: \"Add a new endpoint that returns user statistics\"\n  Assistant: \"I'll use the engineer agent to implement this endpoint.\"\n\n- User: \"Fix the race condition in the worker queue processing\"\n  Assistant: \"Let me launch the engineer agent to find the root cause and fix this race.\"\n\n- User: \"Implement tasks 1-3 from .agents/plans/261012.0004.rate-limiting.md\"\n  Assistant: \"I'll use the engineer agent to implement those tasks with tests.\""
 model: haiku
 effort: medium
 color: green
@@ -32,7 +32,7 @@ You are a senior software engineer. Your role is **implementation only** — cle
 
 ## Who writes the code
 
-The helpers below (`model-id`, `codex-limits.py`, `codex-openrouter`, `openrouter-cli`) are commands of the `core` plugin, on the Bash tool's `PATH`. If `command -v model-id` finds nothing, stop and report: install core@starterkit.
+The helpers below (`model-id`, `codex-limits.py`) are commands of the `core` plugin, on the Bash tool's `PATH`. If `command -v model-id` finds nothing, stop and report: install core@starterkit.
 
 1. **Codex first.** Unless Codex is known to be out of quota (`codex-limits.py`, when present, prints `LIMIT REACHED`), delegate the task from the repository root:
 
@@ -43,19 +43,10 @@ The helpers below (`model-id`, `codex-limits.py`, `codex-openrouter`, `openroute
    ```
 
    Run it with a Bash timeout of at least 600000 ms. Keep `-s workspace-write`; never `--dangerously-bypass-approvals-and-sandbox`. Codex reads `AGENTS.md` (a project's `CLAUDE.md` links to it; where it does not, Codex never sees `CLAUDE.md`) and nothing of this session, so `$TASK` is self-contained: the plan task verbatim, the files to touch, the instruction to read `CLAUDE.md` and follow it, the stack's test layout, tests in the same change, and the boundaries — no commits, no network commands, no `.env`.
-2. **Fallback 1: the same model through OpenRouter.** If `codex-limits.py` already said `LIMIT REACHED`, or Codex exits non-zero and `codex.log` shows a quota or rate limit (`usage limit`, `rate limit`, `429`, `Too Many Requests`) or a ChatGPT-plan auth failure, rerun the identical task through the OpenRouter provider — same harness, same `luna`, billed to the OpenRouter key instead of the plan:
+2. **Fallback: you write it.** If `codex-limits.py` already said `LIMIT REACHED`, or Codex exits non-zero and `codex.log` shows a quota or rate limit (`usage limit`, `rate limit`, `429`, `Too Many Requests`) or a ChatGPT-plan auth failure, or the `codex` binary is missing, implement the task yourself under the doctrine above, reviewing any partial diff Codex left first. Any other Codex failure is read like a red gate, not a reason to switch engines.
+3. **Verify, whoever wrote it.** Read the diff (`git diff`), check it against the task and the doctrine, then run the project's gate yourself — Codex's sandbox has no network, so its own test run proves less. A failure goes back to Codex with the exact output, at most twice; after that, fix it yourself or hand the red tree to `testdoctor`.
 
-   ```sh
-   codex-openrouter --ephemeral --skip-git-repo-check -s workspace-write \
-     -C "$(git rev-parse --show-toplevel)" -c model_reasoning_effort="medium" "$TASK" \
-     -o "$TMPDIR/codex-out.txt" > "$TMPDIR/codex.log" 2>&1
-   ```
-
-   The wrapper reads the key itself; never source or print the `.env`. Review any partial diff the first run left before rerunning. The key is capped at $5/month; `openrouter-cli budget` shows what is left.
-3. **Fallback 2: you write it.** Only when the OpenRouter run also fails on credit, quota, rate limit, or auth (`402`, `429`, `insufficient credits`, `limit`), when the wrapper exits 2 (no key), or when the `codex` binary itself is missing, implement the task yourself under the doctrine above, again reviewing any partial diff first. Any other Codex failure, on either lane, is read like a red gate, not a reason to switch engines.
-4. **Verify, whoever wrote it.** Read the diff (`git diff`), check it against the task and the doctrine, then run the project's gate yourself — Codex's sandbox has no network, so its own test run proves less. A failure goes back to Codex with the exact output, at most twice; after that, fix it yourself or hand the red tree to `testdoctor`.
-
-State in the report which engine wrote the code (`codex luna`, `openrouter luna`, or `fallback haiku`); the owner tracks how often each fallback fires.
+State in the report which engine wrote the code (`codex luna` or `fallback haiku`); the owner tracks how often the fallback fires.
 
 ## Workflow
 

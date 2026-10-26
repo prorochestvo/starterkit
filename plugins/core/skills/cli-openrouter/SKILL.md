@@ -1,6 +1,6 @@
 ---
 name: cli-openrouter
-description: Use OpenRouter models through the bundled CLI for explicitly requested models, primary-model fallback, model comparison, or cheap mechanical text-in/text-out tasks.
+description: Access OpenRouter models via one CLI for explicitly requested models, independent code and architecture reviews, model comparisons, primary-model quota fallback, and cost-conscious text analysis. Claude Code remains the execution agent.
 ---
 
 # OpenRouter CLI
@@ -9,7 +9,7 @@ OpenRouter provides access to models from multiple providers through the bundled
 
 It is a **metered external resource**. Use it deliberately, not as a default replacement for Claude, Codex, Gemini, or the current session.
 
-The API key is `AI_OPENROUTER_KEY`. Both scripts read it themselves, in this order: the environment, `${XDG_CONFIG_HOME:-$HOME/.config}/cli-openrouter/.env`, `${CLAUDE_SKILL_DIR}/.env`, then the macOS keychain item (account `$USER`) whose service `MACOS_KEYCHAIN_AI_OPENROUTER_KEY` names in the environment or either `.env` file. `${CLAUDE_SKILL_DIR}/env.example` shows the file format. A key the API rejects falls through to the next source. Never read the key yourself.
+The API key is `AI_OPENROUTER_KEY`. The CLI reads it itself, in this order: the environment, `${XDG_CONFIG_HOME:-$HOME/.config}/cli-openrouter/.env`, `${CLAUDE_SKILL_DIR}/.env`, then the macOS keychain item (account `$USER`) whose service `MACOS_KEYCHAIN_AI_OPENROUTER_KEY` names in the environment or either `.env` file. `${CLAUDE_SKILL_DIR}/env.example` shows the file format. A key the API rejects falls through to the next source. Never read the key yourself.
 
 Never print, log, commit, or expose the key.
 
@@ -21,7 +21,8 @@ Use OpenRouter when:
 - the user requests a specific model through OpenRouter;
 - a primary model or integration is unavailable or out of quota;
 - a simple mechanical task can be handled more cheaply by an OpenRouter model;
-- comparing or testing specific OpenRouter models is itself the task.
+- comparing or testing specific OpenRouter models is itself the task;
+- an independent code or architecture review is explicitly requested or routed by `workflow/references/review.md`.
 
 Typical cheap tasks:
 
@@ -34,12 +35,10 @@ Typical cheap tasks:
 Do **not** use OpenRouter merely because it is available.
 
 Routing by model: Claude models (`opus`, `sonnet`, `haiku`, `fable`) always run through
-Claude Code (`claude -p`, the subscription), never through OpenRouter. `luna` runs through
-Codex (the `codex` CLI, the plan) first; OpenRouter's `luna` is the fallback only when the
-Codex lane is unavailable or failing. Any other paid model through OpenRouter is a rare
+Claude Code (`claude -p`, the subscription), never through OpenRouter. `luna` normally runs through the subscribed Codex lane; when that lane is unavailable or out of quota, Claude Code can query its OpenRouter model directly via this CLI. Any other paid model through OpenRouter is a rare
 exception that needs a stated reason, unless another skill routes it here.
 
-Tasks requiring strong judgment, architecture, serious code review, or broad repository understanding should normally stay with the primary agents/models unless OpenRouter or a particular model is explicitly requested.
+For complex work, keep Claude Code responsible for execution and verification. Use OpenRouter for independent analysis when explicitly requested, when the primary model is unavailable, or when the established review workflow routes a review through OpenRouter.
 
 ## CLI
 
@@ -134,9 +133,17 @@ openrouter-cli models SUBSTRING
 
 Do not duplicate the tier's model lists in this skill. They change over time and are maintained by the CLI.
 
-Models reached only through OpenRouter have aliases in this skill's `models.json`
-(`grok`, `muse`), resolved by `model-id --openrouter ALIAS`. Which of them a contested
-review call uses, step by step, is set in `workflow` `references/review.md`.
+The curated catalog lives in `models.toml`; the aliases other skills resolve with `model-id --openrouter` (`grok`, `muse`) stay in `models.json`. Review routing remains in `workflow/references/review.md`.
+
+## Curated model selection
+
+`models.toml` holds the owner's curated list of models, grouped by developer country and vendor, each with destination tags and an approximate cost tier. Read it when selecting an OpenRouter model for a review or comparison. It is **not** the live provider catalog or a verified benchmark, and listing a Claude model there does not change the routing above: Claude models still run through Claude Code.
+
+Use `openrouter-cli -m ALIAS` (the entry's table name, for example `grok`) for entries with verified IDs, or `-m provider/model` for any valid live OpenRouter ID. Entries with empty `id` are documentation only until verified and filled; do not guess IDs. Catalog aliases need Python 3.11+ (`tomllib`); on an older `python3` only the `model-id` aliases resolve.
+
+Select by destination first, then use the cost tier as a tie-breaker. Verify live availability and token pricing with `openrouter-cli models`, and respect the existing subscription-first and paid-call rules. Never automatically run every listed model.
+
+Claude Code remains the execution harness: collect minimal safe context, call `openrouter-cli`, inspect results, and perform file edits, commands, and verification itself. Do not invoke Codex, Claude, or Gemini agent CLIs merely because a model from their provider was selected.
 
 ## Cost discipline
 
@@ -204,10 +211,21 @@ When OpenRouter is used as a fallback for an important task, apply the same veri
 
 > Use OpenRouter when it provides clear value. Use the cheapest adequate model, send the minimum necessary context, and do not spend credits by default.
 
-## Codex over OpenRouter
+## Claude Code execution and quota fallback
 
-`codex-openrouter` (next to the CLI) runs `codex exec` with OpenRouter as the
-model provider, default luna (`model-id --openrouter luna`), reading the key itself
-(same lookup order as above). It is the `pipeline:engineer` agent's lane when the Codex plan is
-out of quota: same harness, same model, paid from OpenRouter credits. It sends
-repository code to OpenAI only — never point it at a free or unknown provider.
+Claude Code is the existing execution agent: it reads repository files, chooses relevant context, invokes tools, edits code, runs tests, and verifies outcomes. OpenRouter supplies **model responses** through `openrouter-cli`; it does not provide an agent harness or automatically apply changes.
+
+When the Codex subscription is exhausted or its CLI is unavailable, do **not** invoke Codex merely to get a model response. Claude Code may instead call `openrouter-cli -m MODEL` with a focused question and necessary sanitized context, inspect the answer, and implement or verify changes itself. OpenRouter billing is separate from Codex subscription limits. Do not imply that a text response automatically executes edits or tools.
+
+The model ID selects a **model**, not a harness. For example, `-m openai/...`, `-m anthropic/...`, and `-m google/...` all make direct OpenRouter API requests through the same CLI. Do not introduce `--agent`, provider-specific subcommands, or a separate `codex-openrouter` wrapper for this workflow.
+
+If another workflow genuinely requires Codex-specific agent tools, that is a different requirement; direct OpenRouter text calls are not a drop-in replacement. Follow the requesting workflow's explicit contract rather than silently claiming agent equivalence.
+
+## Independent review
+
+When explicitly requested or routed by `workflow/references/review.md`, use `openrouter-cli -m MODEL` to obtain an independent review of a **focused diff or design**, not an entire repository dump. Give the model the relevant constraints and ask for concrete findings with file/line evidence. Claude Code independently validates findings against the actual code before applying changes. Do not automatically run a panel of models; model selection and review sequence belong to the workflow, not this skill.
+
+## Model inventory
+
+`models.json` holds only aliases used by the existing model-resolution workflow (currently `grok` and `muse`); it is not an exhaustive OpenRouter catalog. Use `openrouter-cli models [SUBSTRING]` to discover live IDs and prices. Do not copy model-quality rankings or fixed prices into this file: quality depends on evaluation tasks and cost on tokens and pricing, so the owner's estimates live only in `models.toml`.
+
