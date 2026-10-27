@@ -1,6 +1,6 @@
 ---
 name: cli-openrouter
-description: Access OpenRouter models via one CLI for explicitly requested models, independent code and architecture reviews, model comparisons, primary-model quota fallback, and cost-conscious text analysis. Claude Code remains the execution agent.
+description: Access OpenRouter models via one CLI for explicitly requested models, independent code and architecture reviews, model comparisons, primary-model quota fallback, and cost-conscious text analysis, and choose which OpenRouter model fits a task from the curated catalog `models.toml`. Claude Code remains the execution agent.
 ---
 
 # OpenRouter CLI
@@ -123,7 +123,7 @@ Use:
 -m MODEL
 ```
 
-when a particular model is explicitly requested or the task requires one.
+when a particular model is explicitly requested or the task requires one; choose that model from `models.toml` (below).
 
 Find current model IDs with:
 
@@ -137,11 +137,18 @@ The curated catalog lives in `models.toml`; the aliases other skills resolve wit
 
 ## Curated model selection
 
-`models.toml` holds the owner's curated list of models, grouped by developer country and vendor, each with destination tags and an approximate cost tier. Read it when selecting an OpenRouter model for a review or comparison. It is **not** the live provider catalog or a verified benchmark, and listing a Claude model there does not change the routing above: Claude models still run through Claude Code.
+`models.toml` holds the owner's curated list of models, grouped by developer country and vendor, each with destination tags and an approximate cost tier. It is the first place to look whenever an OpenRouter model has to be chosen and the request does not name one: a review, a comparison, a fallback, or a task the `free` tier cannot handle. It is **not** the live provider catalog or a verified benchmark, and listing a Claude model there does not change the routing above: Claude models still run through Claude Code.
 
 Use `openrouter-cli -m ALIAS` (the entry's table name, for example `grok`) for entries with verified IDs, or `-m provider/model` for any valid live OpenRouter ID. Entries with empty `id` are documentation only until verified and filled; do not guess IDs. Catalog aliases need Python 3.11+ (`tomllib`); on an older `python3` only the `model-id` aliases resolve.
 
-Select by destination first, then use the cost tier as a tie-breaker. Verify live availability and token pricing with `openrouter-cli models`, and respect the existing subscription-first and paid-call rules. Never automatically run every listed model.
+To choose a model:
+
+1. Keep the entries whose `destination` names the task (`code-review`, `architecture`, `reasoning`, `large-context`, `mechanical`, `quick-check`, …) and whose `id` is filled.
+2. Take the lowest `cost_tier` among them, the higher `score` within a tier; step up only when the task needs it. The file's header lists preliminary picks per task; `score` is a survey opinion, weak where `score_n` is below 3.
+3. Check its live price and context with `openrouter-cli models <id>`.
+4. Call it by alias (`openrouter-cli -m <alias>`) and name the alias and the reason in the report.
+
+An `id` starting with `~` follows the vendor's latest version. Respect the existing subscription-first and paid-call rules. Never automatically run every listed model.
 
 Claude Code remains the execution harness: collect minimal safe context, call `openrouter-cli`, inspect results, and perform file edits, commands, and verification itself. Do not invoke Codex, Claude, or Gemini agent CLIs merely because a model from their provider was selected.
 
