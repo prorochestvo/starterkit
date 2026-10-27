@@ -4,17 +4,34 @@
 # cost_tier: cheap | moderate | expensive. Missing cost_tier means not assessed.
 # IDs are copied from the supplied catalog; empty IDs must be verified before use.
 # Listing a model does not authorize paid OpenRouter calls.
+#
+# score: mean rating (1-10) for review and reasoning work from a 2026-10-26 survey of five
+# models (fable, opus, sol, astra, grok); score_n: how many of them rated the entry. A
+# preliminary opinion, not a benchmark: entries with score_n below 3 are weakly supported,
+# and entries without score were rated by none.
+#
+# Preliminary picks by task (models with an id, cheapest adequate first):
+#   mechanical, quick-check: deepseek_flash, qwen36_flash (or the CLI's free tier)
+#   code-review, alternative-review: deepseek_v32, kimi_k25; stronger: grok, gemini_pro
+#   architecture, reasoning: deepseek_v4_pro; stronger: grok, qwen38_max
+#   large-context: kimi_k25; stronger: gemini_pro, kimi_k3
+#   opus, fable, sol, astra: through their subscriptions (Claude Code, Codex); here only
+#   as a fallback when that lane is down.
 
 [models.usa.anthropic.opus]
 name = "Claude Opus 4.6"
-id = ""
+id = "anthropic/claude-opus-4.6"
 destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+score = 9
+score_n = 5
 cost_tier = "expensive"
 
 [models.usa.openai.sol]
 name = "OpenAI Sol"
-id = ""
+id = "~openai/gpt-sol-latest"
 destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+score = 9
+score_n = 2
 cost_tier = "moderate"
 
 [models.usa.openai.lumi]
@@ -24,32 +41,42 @@ destination = ["development", "code-review", "reasoning"]
 
 [models.usa.google.gemini_pro]
 name = "Gemini 2.5 Pro"
-id = ""
+id = "google/gemini-2.5-pro"
 destination = ["large-context", "code-review", "alternative-review"]
+score = 7.4
+score_n = 5
 cost_tier = "moderate"
 
 [models.usa.xai.grok]
 name = "Grok 4.7"
 id = "x-ai/grok-4.7"
 destination = ["architecture", "alternative-review", "reasoning"]
+score = 8
+score_n = 2
 cost_tier = "moderate"
 
 [models.chn.alibaba.qwen38_max]
 name = "Qwen3.8 Max"
-id = ""
+id = "qwen/qwen3.8-max-0902"
 destination = ["development", "architecture", "code-review"]
+score = 8
+score_n = 1
 cost_tier = "moderate"
 
 [models.chn.moonshot.kimi_k3]
 name = "Kimi K3"
-id = ""
+id = "moonshotai/kimi-k3"
 destination = ["large-context", "reasoning", "code-review"]
+score = 8
+score_n = 1
 cost_tier = "moderate"
 
 [models.chn.deepseek.deepseek_v4_pro]
 name = "DeepSeek V4 Pro"
-id = ""
+id = "deepseek/deepseek-v4-pro"
 destination = ["code-review", "reasoning", "architecture"]
+score = 8
+score_n = 1
 cost_tier = "cheap"
 
 [models.usa.meta.muse]
@@ -62,49 +89,65 @@ cost_tier = "moderate"
 name = "Qwen3 Max"
 id = ""
 destination = ["development", "code-review", "reasoning"]
+score = 7
+score_n = 5
 cost_tier = "moderate"
 
 [models.chn.moonshot.kimi_k25]
 name = "Kimi K2.5"
-id = ""
+id = "moonshotai/kimi-k2.5"
 destination = ["large-context", "dependencies", "code-review"]
+score = 7.4
+score_n = 5
 cost_tier = "cheap"
 
 [models.chn.deepseek.deepseek_v32]
 name = "DeepSeek V3.2"
-id = ""
+id = "deepseek/deepseek-v3.2"
 destination = ["code-review", "mechanical"]
+score = 7.4
+score_n = 5
 cost_tier = "cheap"
 
 [models.unk.unknown.reflection_beam]
 name = "Reflection Beam 1.0"
-id = ""
+id = "reflection/beam-1.0-501b-a23b"
 destination = ["reasoning", "code-review"]
 cost_tier = "cheap"
 
 [models.chn.alibaba.qwen36_flash]
 name = "Qwen3.6 Flash"
-id = ""
+id = "qwen/qwen3.6-flash"
 destination = ["quick-check", "mechanical"]
+score = 6
+score_n = 1
 cost_tier = "cheap"
 
 [models.chn.deepseek.deepseek_flash]
 name = "DeepSeek Flash Latest"
-id = ""
+id = "~deepseek/deepseek-flash-latest"
 destination = ["quick-check", "mechanical"]
+score = 8
+score_n = 1
 cost_tier = "cheap"
 
 [models.usa.anthropic.fable]
 name = "Fable"
-id = ""
+id = "~anthropic/claude-fable-latest"
 destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+score = 9.5
+score_n = 2
 
 [models.usa.openai.astra]
 name = "Astra"
-id = ""
+id = "~openai/gpt-astra-latest"
 destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+score = 9.5
+score_n = 2
 
 [models.chn.deepseek.deepseek_reasoner]
 name = "DeepSeek Reasoner"
 id = ""
 destination = ["development", "architecture", "code-review", "reasoning", "alternative-review"]
+score = 6.66667
+score_n = 3
