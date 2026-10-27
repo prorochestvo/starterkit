@@ -1,4 +1,4 @@
-# Stamps plugin versions (YYYYMM.NNN) inside pull requests, so the squash merge carries the
+# Stamps plugin versions (YYYY.NNN) inside pull requests, so the squash merge carries the
 # version and main gets no extra commit. See .github/scripts/plugin-version.sh.
 #
 # - pull_request: stamp every changed plugin on the PR branch and push one commit; a PR from
