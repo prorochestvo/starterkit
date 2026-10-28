@@ -30,8 +30,12 @@ context until they are relevant.
 ## Quick start
 
 ```bash
-./install.sh <go|flutter> /path/to/your-project
+./install.sh <go|flutter|swift> /path/to/your-project
 ```
+
+`go` and `flutter` enable their stack plugin; `swift` has no stack plugin yet, so its
+template carries the Swift toolchain allowlist itself and enables only `pipeline` and
+`knowledge`.
 
 This copies two files and creates one directory — everything else arrives via plugins:
 
