@@ -41,13 +41,14 @@ against this repository.
 ## Keys
 
 Keys are never stored inside the plugin: the plugin cache is replaced on every version
-update. `openrouter-cli` and `cli-cloudflare`'s `cf-token-run` look a key
-up in this order:
+update. `openrouter-cli` and `cli-cloudflare`'s `cf-token-run` take a key from a
+`..._COMMAND` variable when it is set (a shell command that prints the key, for example a
+keychain lookup; if it fails, the run stops), otherwise from the key variable itself. Both
+are looked up in this order:
 
 1. the environment variable;
 2. `${XDG_CONFIG_HOME:-$HOME/.config}/<tool>/.env`;
 3. a `.env` file in the skill's own directory (present only in a configuration that keeps
-   the skills outside the plugin);
-4. on macOS, the login keychain.
+   the skills outside the plugin).
 
 Each skill's `env.example` names the variables and the exact `<tool>` directory.
