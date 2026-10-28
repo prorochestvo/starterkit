@@ -2,8 +2,8 @@
 name: cli-cloudflare
 description: >-
   Manage Cloudflare account resources with wrangler: Workers deploys and versions,
-  secrets, KV, D1, R2, and account state, including runs with a scoped API token
-  from the keychain. Use for `cf`, `cloudflare`, `cloudflare.com`, or `wrangler`
+  secrets, KV, D1, R2, and account state, including runs with a scoped API token.
+  Use for `cf`, `cloudflare`, `cloudflare.com`, or `wrangler`
   account inspection and resource operations. Not for tunnels, `cloudflared`, or
   tunnel hostnames; not for DNS records, which wrangler has no command for.
 ---
@@ -38,7 +38,8 @@ into the agents).
 `CLOUDFLARE_API_TOKEN` set to a scoped token, so wrangler gets only that token's
 permissions. It takes `CLOUDFLARE_API_TOKEN_<NAME>` from the environment,
 `${XDG_CONFIG_HOME:-$HOME/.config}/cli-cloudflare/.env` or this skill's `.env`,
-else the macOS keychain item that `MACOS_KEYCHAIN_CLOUDFLARE_<NAME>` names;
+unless `CLOUDFLARE_API_TOKEN_<NAME>_COMMAND` (same places) names a shell command that
+prints it, which then wins and stops the run when it fails;
 `env.example` lists the names in use. Prefer the narrowest token the task needs:
 `KV_RO` for reads, `KV_RW` only for an approved write. A token does not replace
 approval: a write under any token still follows "Approval" below.

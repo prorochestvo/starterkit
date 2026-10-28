@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """OpenRouter text API client for model queries and independent reviews.
 
-Reads AI_OPENROUTER_KEY from the environment, then from
+When AI_OPENROUTER_KEY_COMMAND is set (in the environment or a .env below), the key is
+what that shell command prints, and a failing command stops the run with its exit code.
+Otherwise AI_OPENROUTER_KEY is read from the environment, then from
 ${XDG_CONFIG_HOME:-$HOME/.config}/cli-openrouter/.env, then from the .env in this
-skill's directory; when one of those sets MACOS_KEYCHAIN_AI_OPENROUTER_KEY, the keychain
-item of that service is tried last. Sends one chat
+skill's directory. Sends one chat
 completion, prints the answer on stdout and a cost line on stderr.
 
 Usage:
@@ -33,7 +34,7 @@ ENV_FILES = (
     os.path.join(os.path.dirname(os.path.realpath(__file__)), ".env"),
 )
 KEY_VAR = "AI_OPENROUTER_KEY"
-KEYCHAIN_VAR = "MACOS_KEYCHAIN_AI_OPENROUTER_KEY"
+KEY_COMMAND_VAR = "AI_OPENROUTER_KEY_COMMAND"
 
 
 def model_id(alias):
@@ -135,24 +136,24 @@ def env_files_value(var):
     return None
 
 
-def keychain_key():
-    """The key from the keychain service a .env names; None when unset, off macOS, or missing."""
-    service = os.environ.get(KEYCHAIN_VAR) or env_files_value(KEYCHAIN_VAR)
-    if not service or sys.platform != "darwin":
-        return None
+def command_key(command):
+    """The key the shell command prints; a failing or silent command stops the run."""
     import subprocess
     try:
-        out = subprocess.run(["security", "find-generic-password", "-a", os.environ.get("USER", ""),
-                              "-s", service, "-w"],
-                             capture_output=True, text=True, timeout=10)
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return out.stdout.strip() if out.returncode == 0 and out.stdout.strip() else None
+        out = subprocess.run(["/bin/sh", "-c", command], stdout=subprocess.PIPE, text=True,
+                             timeout=120)
+    except (OSError, subprocess.SubprocessError) as exc:
+        die("%s failed: %s" % (KEY_COMMAND_VAR, exc))
+    if out.returncode != 0:
+        die("%s exited %d" % (KEY_COMMAND_VAR, out.returncode), out.returncode)
+    if not out.stdout.strip():
+        die("%s printed no key" % KEY_COMMAND_VAR)
+    return out.stdout.strip()
 
 
-# Keys in lookup order: environment, the XDG .env, the skill-directory .env,
-# then the keychain service a .env names. A key the API rejects with 401 is
-# dropped and the next one is tried, so a stale .env key falls through.
+# The key command, when set, is the only source. Otherwise keys in lookup order:
+# environment, the XDG .env, the skill-directory .env. A key the API rejects with
+# 401 is dropped and the next one is tried, so a stale .env key falls through.
 _keys = None
 
 
@@ -160,15 +161,19 @@ def api_key():
     global _keys
     if _keys is None:
         _keys = []
-        getters = [lambda: os.environ.get(KEY_VAR)]
-        getters += [lambda p=p: env_file_value(KEY_VAR, p) for p in ENV_FILES]
-        for get in getters + [keychain_key]:
-            key = get()
-            if key and key not in _keys:
-                _keys.append(key)
+        command = os.environ.get(KEY_COMMAND_VAR) or env_files_value(KEY_COMMAND_VAR)
+        if command:
+            _keys.append(command_key(command))
+        else:
+            getters = [lambda: os.environ.get(KEY_VAR)]
+            getters += [lambda p=p: env_file_value(KEY_VAR, p) for p in ENV_FILES]
+            for get in getters:
+                key = get()
+                if key and key not in _keys:
+                    _keys.append(key)
     if not _keys:
-        die("no key: %s is not in the environment, %s or %s, and no keychain item is named by %s"
-            % (KEY_VAR, ENV_FILES[0], ENV_FILES[1], KEYCHAIN_VAR))
+        die("no key: neither %s nor %s is in the environment, %s or %s"
+            % (KEY_COMMAND_VAR, KEY_VAR, ENV_FILES[0], ENV_FILES[1]))
     return _keys[0]
 
 
@@ -191,7 +196,7 @@ def request(path, payload=None, timeout=180):
             _keys.pop(0)
             if _keys:
                 return request(path, payload, timeout)
-            die("HTTP 401: every key was rejected (environment, %s, %s, keychain)" % ENV_FILES)
+            die("HTTP 401: every key was rejected (%s or environment, %s, %s)" % ((KEY_COMMAND_VAR,) + ENV_FILES))
         body = exc.read().decode(errors="replace")
         try:
             return json.loads(body)

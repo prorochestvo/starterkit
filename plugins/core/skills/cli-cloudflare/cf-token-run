@@ -6,12 +6,11 @@
 # Usage: cf-token-run NAME CMD [ARGS...]
 #   e.g. cf-token-run KV_RO wrangler kv key get --namespace-id=... KEY
 #
-# Token lookup for NAME, first hit wins:
-#   1. the environment variable CLOUDFLARE_API_TOKEN_<NAME>;
-#   2. CLOUDFLARE_API_TOKEN_<NAME>= in ${XDG_CONFIG_HOME:-$HOME/.config}/cli-cloudflare/.env;
-#   3. the same line in the .env of this skill's directory;
-#   4. on macOS, the login-keychain item (account $USER) whose service name
-#      MACOS_KEYCHAIN_CLOUDFLARE_<NAME> sets, in the environment or either .env.
+# Token for NAME: when CLOUDFLARE_API_TOKEN_<NAME>_COMMAND is set, what that shell command
+# prints (a failing command stops the run with its exit code); otherwise
+# CLOUDFLARE_API_TOKEN_<NAME>. Each variable is read from the environment, then
+# ${XDG_CONFIG_HOME:-$HOME/.config}/cli-cloudflare/.env, then the .env of this skill's
+# directory.
 # CLOUDFLARE_ACCOUNT_ID is taken from the environment or either .env when set.
 set -euo pipefail
 
@@ -44,14 +43,15 @@ lookup() {
   printf '%s' "$v"
 }
 
-token=$(lookup "CLOUDFLARE_API_TOKEN_$name")
-if [ -z "$token" ]; then
-  var="MACOS_KEYCHAIN_CLOUDFLARE_$name"
-  service=$(lookup "$var")
-  [ -n "$service" ] || { echo "cf-token-run: no token: CLOUDFLARE_API_TOKEN_$name is not in the environment, $XDG_ENV_FILE or $SKILL_ENV_FILE, and $var names no keychain item" >&2; exit 2; }
-  [ "$(uname -s)" = Darwin ] || { echo "cf-token-run: $var names a keychain item, which needs macOS" >&2; exit 2; }
-  token=$(security find-generic-password -a "$USER" -s "$service" -w 2>/dev/null) ||
-    { echo "cf-token-run: no keychain item for service $service" >&2; exit 2; }
+command=$(lookup "CLOUDFLARE_API_TOKEN_${name}_COMMAND")
+if [ -n "$command" ]; then
+  rc=0
+  token=$(sh -c "$command") || rc=$?
+  [ "$rc" -eq 0 ] || { echo "cf-token-run: CLOUDFLARE_API_TOKEN_${name}_COMMAND exited $rc" >&2; exit "$rc"; }
+  [ -n "$token" ] || { echo "cf-token-run: CLOUDFLARE_API_TOKEN_${name}_COMMAND printed no token" >&2; exit 2; }
+else
+  token=$(lookup "CLOUDFLARE_API_TOKEN_$name")
+  [ -n "$token" ] || { echo "cf-token-run: no token: neither CLOUDFLARE_API_TOKEN_${name}_COMMAND nor CLOUDFLARE_API_TOKEN_$name is in the environment, $XDG_ENV_FILE or $SKILL_ENV_FILE" >&2; exit 2; }
 fi
 
 export CLOUDFLARE_API_TOKEN="$token"
