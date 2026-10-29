@@ -2,6 +2,7 @@
 # indicating developer origin, not API hosting location.
 # destination describes intended uses; cost_tier is an approximate owner-editable category.
 # cost_tier: cheap | moderate | expensive. Missing cost_tier means not assessed.
+# explicit_only = true: never selected; called only when the owner names the model.
 # IDs are copied from the supplied catalog; empty IDs must be verified before use.
 # Listing a model does not authorize paid OpenRouter calls.
 #
@@ -14,7 +15,7 @@
 #   mechanical, quick-check: deepseek_flash, qwen36_flash (or the CLI's free tier)
 #   code-review, alternative-review: deepseek_v32, kimi_k25; stronger: grok, gemini_pro
 #   architecture, reasoning: deepseek_v4_pro; stronger: grok, qwen38_max
-#   large-context: kimi_k25; stronger: gemini_pro, kimi_k3
+#   large-context: kimi_k25; stronger: gemini_pro
 #   opus, fable, sol, astra: through their subscriptions (Claude Code, Codex); here only
 #   as a fallback when that lane is down.
 
@@ -69,7 +70,8 @@ id = "moonshotai/kimi-k3"
 destination = ["large-context", "reasoning", "code-review"]
 score = 8
 score_n = 1
-cost_tier = "moderate"
+cost_tier = "expensive"
+explicit_only = true
 
 [models.chn.deepseek.deepseek_v4_pro]
 name = "DeepSeek V4 Pro"
@@ -80,7 +82,7 @@ score_n = 1
 cost_tier = "cheap"
 
 [models.usa.meta.muse]
-name = "Muse Spark Open"
+name = "Muse"
 id = "meta/muse-wonder"
 destination = ["alternative-review", "architecture"]
 cost_tier = "moderate"
