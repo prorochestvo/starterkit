@@ -143,7 +143,7 @@ Use `openrouter-cli -m ALIAS` (the entry's table name, for example `grok`) for e
 
 To choose a model:
 
-1. Keep the entries whose `destination` names the task (`code-review`, `architecture`, `reasoning`, `large-context`, `mechanical`, `quick-check`, …) and whose `id` is filled.
+1. Keep the entries whose `destination` names the task (`code-review`, `architecture`, `reasoning`, `large-context`, `mechanical`, `quick-check`, …) and whose `id` is filled. Skip entries with `explicit_only = true`: they run only when the owner names them.
 2. Take the lowest `cost_tier` among them, the higher `score` within a tier; step up only when the task needs it. The file's header lists preliminary picks per task; `score` is a survey opinion, weak where `score_n` is below 3.
 3. Check its live price and context with `openrouter-cli models <id>`.
 4. Call it by alias (`openrouter-cli -m <alias>`) and name the alias and the reason in the report.
