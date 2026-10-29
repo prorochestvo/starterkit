@@ -1,6 +1,6 @@
 ---
 name: flutter-conventions
-description: Flutter/Dart project conventions - forbidden constructs, state management discipline, widget rules, async safety, error-handling contract, and test structure. Load before writing or reviewing any Dart/Flutter code.
+description: Flutter/Dart project conventions - forbidden constructs, state management discipline, layering (business logic vs UI, interfaces for dependencies), coverage targets, widget rules, async safety, error-handling contract, and test structure. Load before writing or reviewing any Dart/Flutter code.
 paths:
   - "**/*.dart"
   - "**/pubspec.yaml"
@@ -24,6 +24,20 @@ Project `CLAUDE.md` overrides anything here. These are the defaults for every Fl
 - Local, view-only state via `setState` is fine; app-level state through the chosen approach only.
 - State holders are injected and testable (BLoC → `bloc_test`; Riverpod → `ProviderContainer` overrides).
 
+## Layering and dependencies
+
+Every violation in this section is a finding, not a nit.
+
+- Three layers: UI (screens, widgets), business logic (models, use cases, state holders, repository interfaces), adapters (implementations of business-logic interfaces). The composition root (`main.dart` unless project `CLAUDE.md` names another) belongs to no layer and is the only file that imports UI, business logic and adapters together. Take the layer directories from project `CLAUDE.md`.
+- Business logic imports nothing from `package:flutter/` except `foundation.dart`, and no UI package (`flutter_bloc`, `go_router`, …).
+- UI never imports repository implementations, adapters, HTTP clients or storage.
+- Business logic reaches every external technology (HTTP, storage, platform channels, URL launching, TTS, media, clock, UUID, third-party SDKs) only through an interface it declares.
+- Adapters are registered only at the composition root; swapping a technology changes only the adapter and its registration.
+- Keep these interfaces even with a single implementation; do not inline them. For Flutter this overrides the "interfaces are the cost" and "not speculation" rules in `knowledge:software-design`: the interface is what lets a technology be swapped by changing only the wiring.
+- Measure with `flutter test --coverage`, as line coverage over all files in the business-logic directories together: at least 80%, aiming at 100%; below 100%, list each business-logic file with uncovered lines and the reason in the PR description. UI directories together: at least 50%.
+- Count a file missing from `lcov.info` as 0% (`flutter test --coverage` omits files no test imports); exclude only generated files (`*.g.dart`, `*.freezed.dart`, and any other file the build or `flutter gen-l10n` writes).
+- For Flutter business logic these targets override "never make a number the goal" in `knowledge:testing-doctrine`; its ban on padding tests still applies.
+
 ## Widget & async rules
 
 - Stable widgets in lists get explicit keys (`ValueKey`/`ObjectKey`) to preserve state during reorder/insert.
@@ -33,7 +47,7 @@ Project `CLAUDE.md` overrides anything here. These are the defaults for every Fl
 
 ## Error-handling contract (default pattern)
 
-- A sealed `Failure` hierarchy (`sealed class Failure`) is the **only** mechanism for user-visible error messages, constructed where the error arises (data/domain layer).
+- A sealed `Failure` hierarchy (`sealed class Failure`) is the **only** mechanism for user-visible error messages, constructed where the error arises (business logic or an adapter).
 - Everything else flows as plain `Exception`/`Error` and is translated to one generic fallback constant at the UI boundary.
 - Use-case return type is `Result<T, Failure>` / `Either<Failure, T>` — one library, consistently.
 - Every test exercising an error branch asserts: (1) the UI rendered something (no silent failure); (2) the text matches the matched `Failure` case; (3) the text equals the fallback constant for non-`Failure` errors.
