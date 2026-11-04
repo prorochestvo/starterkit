@@ -222,7 +222,8 @@ if [ "$ALLOW_SECRETS" = 0 ]; then
   hits="$(printf '%s' "$material" | grep -nEi \
     -e '(api[_-]?key|secret|passwd|password|token|credential)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{8,}' \
     -e 'sk-[A-Za-z0-9_-]{20,}' \
-    -e 'ghp_[A-Za-z0-9]{28,}' \
+    -e 'gh[pousr]_[A-Za-z0-9][A-Za-z0-9_.-]{14,}[A-Za-z0-9]' \
+    -e 'github_pat_[A-Za-z0-9_]{16,}' \
     -e 'AKIA[0-9A-Z]{16}' \
     -e 'xox[baprs]-[A-Za-z0-9-]{10,}' \
     -e 'BEGIN [A-Z ]*PRIVATE KEY' \
