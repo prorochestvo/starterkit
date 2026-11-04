@@ -44,6 +44,11 @@ the next free index across the directory, `history/` included:
 - `M` — a real defect or gap that is not urgent;
 - `L` — cleanup, consistency, nice-to-have.
 
+An entry that records a defect — something that behaves wrong now (a failing test, wrong
+output, a crash, a broken gate), not a missing feature or a cleanup — carries a
+`- kind: bug` line under its `decision:` line. Set its priority by impact like any other
+entry.
+
 `NNNN` is the highest index present plus one; indexes are never reused — the gap an
 accepted (deleted) entry leaves is never refilled — and they count across both this
 shape and the older `YYMMDD.NNNN` one, so an existing backlog keeps its numbering.
@@ -97,6 +102,10 @@ picking work with no instruction: every reviewed file gets an explicit decision 
 `decision:` line — `accepted` or `dropped — <one-line reason> (<date>)`. Never resolve an
 entry silently, and never turn triage into one question per item — batch it. Grooming
 (below) is a separate pass: it closes stale entries and leaves the rest `open`.
+
+When picking work with no instruction, open owner feedback comes first; then open
+`kind: bug` entries, `H` before `M` before `L`; then the other entries in the same order.
+An entry blocked on someone else goes last.
 
 ## Grooming
 
