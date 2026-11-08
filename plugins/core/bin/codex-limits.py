@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the live Codex rate limits, the way `agy -p /usage` does for Gemini.
+"""Print the live Codex rate limits.
 
 Asks `codex app-server` over stdio JSON-RPC (account/rateLimits/read). That is a
 live request: the session rollouts under ~/.codex/sessions only hold the value

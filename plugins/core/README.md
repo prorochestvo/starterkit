@@ -27,13 +27,13 @@ against this repository.
 ## Data sent to external services
 
 - `second-opinion.sh` sends the material it reviews (a diff, or the full files with
-  `--full` or `--target files:...`) to external models: OpenRouter by default, whose tier
-  aliases include OpenAI's Codex-family GPT models, and Google's Gemini through the `agy`
-  client when `--model` is given. Nothing is sent unless the script is run.
+  `--full` or `--target files:...`) to OpenRouter models, whose tier aliases include
+  OpenAI's GPT models and Google's Gemini. Nothing is sent unless the script is run.
 - The `cli-openrouter` skill and its `openrouter-cli` helper send their prompts to
   OpenRouter.
-- The `ai-claude`, `ai-gemini` and `ai-codex` skills call the `claude`, `agy` and `codex`
-  command-line clients, which send their prompts to Anthropic, Google and OpenAI.
+- The `ai-claude` and `ai-codex` skills call the `claude` and `codex` command-line
+  clients, which send their prompts to Anthropic and OpenAI; `ai-gemini` sends its
+  prompts to Google's Gemini through `openrouter-cli` (OpenRouter).
 - Each of these runs only when a skill or a command invokes it; installing the plugin sends
   nothing.
 - `cli-cloudflare` acts on the Cloudflare account its token belongs to.

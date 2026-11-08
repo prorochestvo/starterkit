@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Transcribe a prose review into the findings schema.
 
-Models honour --json-schema unevenly: Gemini returns the requested object, other
-models answer with a markdown table no matter what the schema says. Dropping
+Models follow a requested schema unevenly: some return the requested object,
+others answer with a markdown table no matter what the prompt says. Dropping
 those reviewers would narrow the panel to whoever is best behaved, and treating
 their output as empty would report silence as approval — the worse of the two.
 So a prose answer gets one cheap transcription pass instead.
@@ -42,28 +42,16 @@ def structured_of(raw, engine):
     """Return the findings object already present in a reviewer's output, or None."""
     if not raw.strip():
         return None
-    if engine == "agy":
-        try:
-            envelope = json.loads(raw)
-        except ValueError:
-            return None
-        payload = envelope.get("structured_output")
-    else:
-        try:
-            payload = json.loads(strip_fence(raw))
-        except ValueError:
-            return None
+    try:
+        payload = json.loads(strip_fence(raw))
+    except ValueError:
+        return None
     if isinstance(payload, dict) and isinstance(payload.get("findings"), list):
         return payload
     return None
 
 
 def prose_of(raw, engine):
-    if engine == "agy":
-        try:
-            return json.loads(raw).get("response", "") or ""
-        except ValueError:
-            return raw
     return raw
 
 
@@ -100,7 +88,7 @@ def main():
         sys.stderr.write("not a review: %s\n" % reason)
         raise SystemExit(1)
 
-    payload = structured_of(load(sys.argv[4]), "agy")
+    payload = structured_of(load(sys.argv[4]), "openrouter")
     if payload is None:
         reject("the transcriber produced no usable output")
 
@@ -119,16 +107,7 @@ def main():
 
     payload["_normalized"] = True
 
-    if engine == "agy":
-        try:
-            envelope = json.loads(raw)
-        except ValueError:
-            envelope = {"status": "SUCCESS"}
-        # Keep the reviewer's own cost and timing; only its shape was borrowed.
-        envelope["structured_output"] = payload
-        out = json.dumps(envelope)
-    else:
-        out = json.dumps(payload)
+    out = json.dumps(payload)
 
     with open(path, "w") as fh:
         fh.write(out)
