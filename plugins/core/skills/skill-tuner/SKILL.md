@@ -149,15 +149,19 @@ task first, then tune, then log. Everything below happens in the same turn.
    - `approve` — the edit addresses the remark, is the smallest that would, and contradicts
      nothing in the skill, other skills, or the global instructions; pass to the next
      reviewer;
-   - `revise` — with the concrete change; `luna` redrafts once and the chain restarts from
-     `opus`;
+   - `revise` — with the concrete change; `luna` applies it as in step 4 and the chain
+     restarts from `opus`, up to 3 redraft rounds per remark;
    - `reject` — the remark is a one-off (`none`), the target is wrong, or the edit would
      overfit; stop, nothing to undo, status `rejected`.
 
+   Any `revise` that changes what the rule requires or forbids, rather than its wording,
+   and any `revise` after the 3rd redraft round → do not apply: show the diff and every
+   reviewer's position in chat, status `drafted`. Step 4's one re-ask for a missed
+   requested change does not count as a round.
+
    All three `approve` → copy `luna`'s reviewed file over the target and go to step 6.
    Draft-only targets (see Authority) and larger rewrites are shown in chat instead, status `drafted`; skip
-   step 6. Any `revise` after the one redraft → do not apply: show the diff and every
-   reviewer's position in chat, status `drafted`.
+   step 6.
 6. **Commit one change per remark** in the repository that holds the skill:
    - public skills (starterkit plugins): a branch in a starterkit clone, never `main`;
      push only after `public-gate.sh --range "<remote branch or base>..HEAD"` reports 0
