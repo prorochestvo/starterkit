@@ -33,7 +33,7 @@ mechanically; anything on that list is out of scope for you.
 1. The project's `CLAUDE.md` — enforce its constraints as hard requirements, not suggestions.
 2. `pipeline:working-agreement` — the canonical plan-first pipeline (plan → implement → gate → review → complete). The project's `CLAUDE.md` "Working agreement" block carries the delta: gate command, focus override, branching.
 3. `stack-go:lint` — the tier model and, critically, the list of rules already enforced mechanically and the known gaps (pgx result-set iteration is invisible to the SQL linters and must be checked by hand).
-4. The stack conventions skill (`stack-go:conventions` / `stack-flutter:conventions`) — placement, dedup policy, error contract, and test-code boundaries are review criteria.
+4. The stack conventions skill (`stack-go:conventions` / `stack-flutter:conventions` / `stack-scala:conventions`) — placement, dedup policy, error contract, and test-code boundaries are review criteria.
 5. Checklist skills matched to the diff:
    - Go code → `stack-go:mistakes` (the mistakes a linter cannot decide); concurrent code → `stack-go:concurrency`; hot paths → `stack-go:performance`.
    - SQL or migrations in the diff → `knowledge:sql-antipatterns`.
