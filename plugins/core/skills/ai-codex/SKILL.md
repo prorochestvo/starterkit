@@ -1,6 +1,6 @@
 ---
 name: ai-codex
-description: Ask Codex (OpenAI's `codex` CLI, GPT models) a question or an alternative take on a plan, code fragment, or decision. Use only when the user asks for Codex by name ("спроси у codex", "уточни у codex", "что думает codex/gpt", "ask codex") or a review blocker is contested. A `review` or `second-opinion` request runs `second-opinion.sh` instead. Never call Codex on your own initiative.
+description: Ask Codex (OpenAI's `codex` CLI, GPT models) a question or an alternative take on a plan, code fragment, or decision. Use only when the user asks for Codex by name ("спроси у codex", "уточни у codex", "что думает codex/gpt", "ask codex"), asks for a `review` or a `second-opinion`, a review blocker is contested, or a `pipeline:working-agreement` stage names Codex (the external plan review, a blocking decision). Never call Codex on your own initiative.
 ---
 
 # Ask Codex
@@ -10,9 +10,10 @@ Codex, alongside your own view when they differ.
 
 ## When to call
 
-Only when the owner asks for Codex by name or a review blocker is contested.
-A `review` or `second-opinion` goes through `second-opinion.sh`
-per `workflow/references/review.md`, not this skill. Otherwise no call
+Only when the owner asks for Codex by name, asks for a `review` or a `second-opinion`,
+a review blocker is contested, or a `pipeline:working-agreement` stage names Codex (the
+external plan review, a blocking decision). `workflow/references/review.md` names the
+model and says when `second-opinion.sh` runs instead. Otherwise no call
 (AGENTS.md, external reviewers).
 
 ## Canonical invocation

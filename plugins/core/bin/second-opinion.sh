@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
 # Second-opinion review flow.
 #
-# Sends a change to reviewers outside the Anthropic family — by default OpenRouter
-# models picked by --tier, optionally agy models — and
-# merges their verdicts into one ranked report, marking which findings more than
-# one reviewer arrived at independently.
+# Sends a change to reviewers outside the Anthropic family — OpenRouter models
+# picked by --tier, or named with --or — and merges their verdicts into one
+# ranked report, marking which findings more than one reviewer arrived at
+# independently.
 #
 # The reviewers get exactly the material assembled here and nothing else: no
-# workspace, no shell, no file access. That is deliberate. agy can be given the
-# repo with --add-dir, but its read path goes through its command tool, so
-# "let the reviewer read the code" means "give an autonomous agent a shell in
-# your repository". Context is cheaper to assemble than that is to trust; use
+# workspace, no shell, no file access. That is deliberate: context is cheaper to
+# assemble than a reviewer with a shell in your repository is to trust; use
 # --full when the diff alone is too thin to judge.
 set -euo pipefail
 
@@ -28,7 +26,7 @@ SCHEMA="$BIN/second-opinion-schema.json"
 NORM_SCHEMA="$BIN/second-opinion-normalize-schema.json"
 MERGE="$BIN/second-opinion-merge.py"
 # openrouter-cli, not bin/openrouter.sh: it is the client whose key is configured, and it
-# can ask for reasoning, which gemini-4-argon requires (it answers 400 without).
+# can ask for reasoning, which Gemini (g-pro, g-flash) requires: it answers 400 without.
 OPENROUTER="$BIN/openrouter-cli"
 
 TARGET="working"
@@ -41,14 +39,13 @@ TIER=2
 TIMEOUT="300s"
 ALLOW_SECRETS=0
 MAX_BYTES=$((512 * 1024))
-AGY_MODELS=()
 OR_MODELS=()
 
-# Schema enforcement is a per-model courtesy, not a guarantee: Gemini honours
-# --json-schema, GPT-OSS answers in a markdown table regardless. Rather than
-# restrict the roster to well-behaved models, prose answers get a second cheap
-# pass that transcribes them into the schema without judging them.
-NORMALIZER="${SECOND_OPINION_NORMALIZER:-$("$BIN/model-id" g-flash)-medium}"
+# Schema compliance is a per-model courtesy, not a guarantee: some models answer
+# in a markdown table whatever the prompt asks. Rather than restrict the roster
+# to well-behaved models, prose answers get a second cheap pass that transcribes
+# them into the schema without judging them.
+NORMALIZER="${SECOND_OPINION_NORMALIZER:-$("$BIN/model-id" --openrouter luna)}"
 
 die() { printf 'second-opinion: %s\n' "$*" >&2; exit 1; }
 note() { printf '%s\n' "$*" >&2; }
@@ -65,15 +62,13 @@ second-opinion.sh — have non-Anthropic reviewers critique a change
         files:A,B,C     full contents of the listed files
         -               read the material from stdin
 
-  -m, --model MODEL   agy reviewer, repeatable (default: none)
       --or MODEL      OpenRouter reviewer, repeatable, through openrouter-cli at high reasoning
-      --tier N        the escalation step of a contested call, used when neither -m nor --or
-                      is given (default 2):
+      --tier N        the escalation step of a contested call, used when --or is not given
+                      (default 2):
                         2  sol and opus disagree: g-pro and grok
                         3  high cost of error (security, architecture, R# rules): adds muse
                         4  still ambiguous after 3: adds astra; ask fable through
                            claude -p yourself, it is in the Anthropic family this flow excludes
-      --list-models   print the agy roster and exit
 
   -q, --question T    what to focus on, or the claim to check; @file to read it from a file
       --full          append the current full contents of every file the diff touches
@@ -92,7 +87,6 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     -t|--target) TARGET="$2"; shift 2 ;;
-    -m|--model) AGY_MODELS+=("$2"); shift 2 ;;
     --or) OR_MODELS+=("$2"); shift 2 ;;
     --tier) TIER="$2"; shift 2 ;;
     -q|--question) QUESTION="$2"; shift 2 ;;
@@ -102,17 +96,16 @@ while [ $# -gt 0 ]; do
     --full) FULL=1; shift ;;
     --keep) KEEP=1; shift ;;
     --allow-secrets) ALLOW_SECRETS=1; shift ;;
-    --list-models) agy models </dev/null; exit 0 ;;
     -h|--help) usage; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
   esac
 done
 
-# The owner's escalation ladder (2026-10-21), applied only when neither roster was given, so -m or
-# --or alone still means "these reviewers and nothing else". Models are chosen from a 13-model
+# The owner's escalation ladder (2026-10-21), applied only when --or was not given, so --or alone
+# still means "these reviewers and nothing else". Models are chosen from a 13-model
 # OpenRouter test: grok and muse found the real defects, the cheaper approvers found none.
 case "$TIER" in 2|3|4) ;; *) die "--tier must be 2, 3 or 4" ;; esac
-if [ ${#AGY_MODELS[@]} -eq 0 ] && [ ${#OR_MODELS[@]} -eq 0 ]; then
+if [ ${#OR_MODELS[@]} -eq 0 ]; then
   ladder=(g-pro grok)
   [ "$TIER" -ge 3 ] && ladder+=(muse)
   [ "$TIER" -ge 4 ] && ladder+=(astra)
@@ -124,7 +117,7 @@ case "$QUESTION" in
   @*) QUESTION="$(cat "${QUESTION#@}")" ;;
 esac
 
-[ ${#AGY_MODELS[@]} -eq 0 ] || command -v agy >/dev/null 2>&1 || die "agy is not on PATH"
+[ -x "$OPENROUTER" ] || die "missing OpenRouter client: $OPENROUTER"
 [ -r "$SCHEMA" ] || die "missing schema: $SCHEMA"
 [ -r "$NORM_SCHEMA" ] || die "missing transcription schema: $NORM_SCHEMA"
 [ -r "$MERGE" ] || die "missing merger: $MERGE"
@@ -144,8 +137,8 @@ fi
 # whatever they point at.
 RUN="$(mktemp -d "${TMPDIR:-/tmp}/second-opinion.XXXXXXXX")"
 if [ "$KEEP" = 0 ]; then
-  # find rather than a glob: `*` skips dotfiles, so a reviewer dropping a .cache
-  # in the neutral directory would defeat the rmdir and strand the whole tree.
+  # find rather than a glob: `*` skips dotfiles, so a dotfile in the run
+  # directory would defeat the rmdir and strand the whole tree.
   trap 'find "$RUN" -mindepth 1 -delete 2>/dev/null; rmdir "$RUN" 2>/dev/null || true' EXIT
 fi
 
@@ -254,10 +247,8 @@ change is correct, say so and return an empty findings list. No summary of what
 the code does, no praise, no restating the request.
 
 You have no file access, no shell and no tools, and the paths named below do not
-exist where you are running. Everything you are given is in the material. Do not
-try to read a file, list a directory or run a command: the attempt is denied and
-costs you your entire answer. Reason from the material alone, and mark as
-"unverified" whatever it does not settle.
+exist where you are running. Everything you are given is in the material. Reason
+from the material alone, and mark as "unverified" whatever it does not settle.
 PROMPT
 
 if [ -n "$QUESTION" ]; then
@@ -280,8 +271,6 @@ $material
 [ -n "$OUT" ] || OUT="$RUN/report.json"
 
 manifest="$RUN/manifest.json"
-NEUTRAL="$RUN/cwd"
-mkdir -p "$NEUTRAL"
 
 # A stalled OpenRouter connection would otherwise hang `wait` for as long as the
 # API cares to keep the socket open, holding the whole panel hostage.
@@ -291,13 +280,12 @@ case "$TIMEOUT" in
   *[0-9]) OPENROUTER_TIMEOUT="$TIMEOUT" ;;
   *) OPENROUTER_TIMEOUT=300 ;;
 esac
-export OPENROUTER_TIMEOUT
 : > "$RUN/entries"
 : > "$RUN/files"
 
 slug() { printf '%s' "$1" | tr '/:' '__'; }
 
-note "second-opinion: ${size} bytes to ${#AGY_MODELS[@]} agy and ${#OR_MODELS[@]} OpenRouter reviewer(s)..."
+note "second-opinion: ${size} bytes to ${#OR_MODELS[@]} OpenRouter reviewer(s)..."
 
 # The index keeps the path unique when the same model is listed twice, which is
 # a legitimate way to ask one model for two independent passes; without it both
@@ -316,44 +304,21 @@ label_for() {
   fi
 }
 
-for m in ${AGY_MODELS[@]+"${AGY_MODELS[@]}"}; do
-  idx=$((idx + 1))
-  f="$RUN/agy.$idx.$(slug "$m").json"
-  label="$(label_for "$m" "$idx")"
-  printf '{"reviewer":"%s","engine":"agy","file":"%s"}\n' "$label" "$f" >> "$RUN/entries"
-  printf '%s\t%s\n' "$label" "$f" >> "$RUN/files"
-  (
-    # Run from an empty directory. agy is an agent, not a completion endpoint:
-    # when the paths named in a diff resolve under its working directory it goes
-    # to read them, and in headless mode that tool call is auto-denied and takes
-    # the whole answer down with it. With nothing to reach for, it reviews.
-    cd "$NEUTRAL" && printf '%s' "$prompt" | agy \
-      --model "$m" \
-      --output-format json \
-      --json-schema "$SCHEMA" \
-      --print-timeout "$TIMEOUT" \
-      > "$f" 2> "$f.err" || true
-  ) &
-done
-
-if [ ${#OR_MODELS[@]} -gt 0 ]; then
-  [ -x "$OPENROUTER" ] || die "OpenRouter reviewers requested but $OPENROUTER is missing"
-  schema_text="$(cat "$SCHEMA")"
-  or_prompt="$prompt
+schema_text="$(cat "$SCHEMA")"
+or_prompt="$prompt
 
 Respond with a single JSON object and nothing else, matching this schema:
 $schema_text"
-  for m in "${OR_MODELS[@]}"; do
-    idx=$((idx + 1))
-    f="$RUN/or.$idx.$(slug "$m").json"
-    label="$(label_for "$m" "$idx")"
-    printf '{"reviewer":"%s","engine":"openrouter","file":"%s"}\n' "$label" "$f" >> "$RUN/entries"
-    printf '%s\t%s\n' "$label" "$f" >> "$RUN/files"
-    (
-      printf '%s' "$or_prompt" | "$OPENROUTER" -m "$m" --think high -n 16000 > "$f" 2> "$f.err" || true
-    ) &
-  done
-fi
+for m in "${OR_MODELS[@]}"; do
+  idx=$((idx + 1))
+  f="$RUN/or.$idx.$(slug "$m").json"
+  label="$(label_for "$m" "$idx")"
+  printf '{"reviewer":"%s","engine":"openrouter","file":"%s"}\n' "$label" "$f" >> "$RUN/entries"
+  printf '%s\t%s\n' "$label" "$f" >> "$RUN/files"
+  (
+    printf '%s' "$or_prompt" | "$OPENROUTER" -m "$m" --think high -n 16000 --timeout "$OPENROUTER_TIMEOUT" > "$f" 2> "$f.err" || true
+  ) &
+done
 
 wait
 
@@ -363,7 +328,7 @@ wait
 NORMALIZE="$BIN/second-opinion-normalize.py"
 while IFS=$'\t' read -r reviewer f; do
   [ -n "$f" ] || continue
-  case "$f" in "$RUN/or."*) engine="openrouter" ;; *) engine="agy" ;; esac
+  engine="openrouter"
   if prose="$(python3 "$NORMALIZE" check "$f" "$engine")"; then
     note "second-opinion: $reviewer answered in prose, transcribing with $NORMALIZER"
     printf 'Transcribe the code review below into the required schema. Carry every
@@ -378,12 +343,12 @@ done, or anything else that does not actually report on code, set is_review to
 false, say in "reason" what it is instead, and leave findings empty. Never
 transcribe a non-review into an approval.
 
+Respond with a single JSON object and nothing else, matching this schema:
+%s
+
 --- REVIEW TEXT ---
-%s' "$prose" | (cd "$NEUTRAL" && agy \
-      --model "$NORMALIZER" \
-      --output-format json \
-      --json-schema "$NORM_SCHEMA" \
-      --print-timeout "$TIMEOUT") \
+%s' "$(cat "$NORM_SCHEMA")" "$prose" | "$OPENROUTER" -m "$NORMALIZER" -n 16000 \
+      --timeout "$OPENROUTER_TIMEOUT" \
       > "$f.norm" 2> "$f.norm.err" || true
     # normalize.py stamps the file itself when it rejects a transcription, but it
     # cannot do so if it never runs or dies on a signal. Stamping again here costs

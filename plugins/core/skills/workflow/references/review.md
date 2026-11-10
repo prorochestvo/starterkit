@@ -49,7 +49,8 @@ A `review` (see the glossary) runs in three steps, in this order:
 - External calls happen only if one of these holds: I asked for a `review` by name (all
   three steps above, keeping every rule here); I asked for a `second-opinion` (`codex` on
   `sol` only, since 2026-10-19 in place of `codex` + `gemini`); or a blocker is contested
-  (`second-opinion.sh`, above). Otherwise no external call. In a requested `review` a `codex` blocker is already
+  (`second-opinion.sh`, above); or `pipeline:working-agreement` requires Codex for an
+  external plan review or a blocking decision. Otherwise no external call. In a requested `review` a `codex` blocker is already
   cross-family: uncontested → fix; contested → reaches me with each position stated; no
   second external round. A blocker from the parallel reviewers contested inside that
   review rides on the same external pass, not a separate `second-opinion.sh` run; the

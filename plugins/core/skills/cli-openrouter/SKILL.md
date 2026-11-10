@@ -7,7 +7,7 @@ description: Access OpenRouter models via one CLI for explicitly requested model
 
 OpenRouter provides access to models from multiple providers through the bundled `openrouter-cli`.
 
-It is a **metered external resource**. Use it deliberately, not as a default replacement for Claude, Codex, Gemini, or the current session.
+It is a **metered external resource**. Use it deliberately, not as a default replacement for Claude, Codex, or the current session.
 
 The CLI finds the API key itself. When `AI_OPENROUTER_KEY_COMMAND` is set, the key is what that shell command prints; if the command fails, the run stops with its exit code and does not fall back. Otherwise the key is `AI_OPENROUTER_KEY`, in this order: the environment, `${XDG_CONFIG_HOME:-$HOME/.config}/cli-openrouter/.env`, `${CLAUDE_SKILL_DIR}/.env`; a key the API rejects falls through to the next one. Both variables are read from the same places. `${CLAUDE_SKILL_DIR}/env.example` shows the file format. Never read the key yourself.
 
@@ -150,7 +150,7 @@ To choose a model:
 
 An `id` starting with `~` follows the vendor's latest version. Respect the existing subscription-first and paid-call rules. Never automatically run every listed model.
 
-Claude Code remains the execution harness: collect minimal safe context, call `openrouter-cli`, inspect results, and perform file edits, commands, and verification itself. Do not invoke Codex, Claude, or Gemini agent CLIs merely because a model from their provider was selected.
+Claude Code remains the execution harness: collect minimal safe context, call `openrouter-cli`, inspect results, and perform file edits, commands, and verification itself. Do not invoke the Codex or Claude agent CLIs merely because a model from their provider was selected. Follow `ai-gemini` for every Gemini call, including catalog aliases.
 
 ## Cost discipline
 

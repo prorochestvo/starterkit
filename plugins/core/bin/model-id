@@ -6,9 +6,9 @@
     model-id --list              every alias and its id
 
 Exact ids live in one place per tool: skills/ai-codex/models.json (GPT models
-run through codex), skills/ai-gemini/models.json (Gemini models run through
-agy), and skills/cli-openrouter/models.json (models reached only through
-OpenRouter, stored as full OpenRouter ids). Everything else - hooks, scripts, skills, agents, the glossary - names a
+run through codex), skills/ai-gemini/models.json (Gemini models, reached
+through OpenRouter), and skills/cli-openrouter/models.json (other models
+reached only through OpenRouter, stored as full OpenRouter ids). Everything else - hooks, scripts, skills, agents, the glossary - names a
 model by its alias and resolves it here, so a model upgrade is a one-line edit
 in the owning skill. The OpenRouter id of a GPT model is derived from the same
 entry (openai/<id>), never kept separately. An unknown alias exits 2 with
