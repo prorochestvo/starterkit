@@ -2,10 +2,10 @@
 """Merge independent reviewer verdicts into one ranked report.
 
 Reads a manifest written by second-opinion.sh, pulls each reviewer's structured
-findings out of whatever envelope its engine produced, clusters findings that
-land on the same place in the same file, and ranks the result. Agreement between
-reviewers is the signal worth surfacing: a defect two unrelated models flag
-independently is far likelier to be real than either one alone.
+findings out of its output, clusters findings that land on the same place in
+the same file, and ranks the result. Agreement between reviewers is the signal
+worth surfacing: a defect two unrelated models flag independently is far
+likelier to be real than either one alone.
 
 Usage: second-opinion-merge.py MANIFEST.json OUT.json
 """
@@ -50,28 +50,9 @@ def extract(entry):
     if not raw:
         return None, None, [], "empty output"
 
-    payload = None
-    if entry.get("engine") == "agy":
-        try:
-            envelope = json.loads(raw)
-        except ValueError:
-            return None, None, [], "unparseable envelope: %s" % raw[:200]
-        if envelope.get("status") not in (None, "SUCCESS"):
-            return None, None, [], envelope.get("error") or ("engine status %s" % envelope.get("status"))
-        payload = envelope.get("structured_output")
-        entry["duration"] = envelope.get("duration_seconds")
-        # `or {}` rather than a default: an explicit "usage": null returns None
-        # from .get, and the chained lookup would take the whole report down.
-        entry["usage"] = (envelope.get("usage") or {}).get("total_tokens")
-        if payload is None:
-            # No fallback. An agy answer without structured output is prose, and
-            # prose is the transcriber's job; by the time the report is built,
-            # transcription has either replaced this file or stamped it failed.
-            return None, None, [], "answered in prose and transcription did not produce a review"
-    else:
-        payload = coerce_json(raw)
-        if isinstance(payload, dict) and payload.get("status") == "ERROR":
-            return None, None, [], payload.get("error") or "engine failure"
+    payload = coerce_json(raw)
+    if isinstance(payload, dict) and payload.get("status") == "ERROR":
+        return None, None, [], payload.get("error") or "engine failure"
 
     # A reviewer whose output could not be parsed must never be reported as a
     # reviewer that found nothing: silence and approval are opposite answers.

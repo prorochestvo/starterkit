@@ -13,9 +13,9 @@
 #
 # Preliminary picks by task (models with an id, cheapest adequate first):
 #   mechanical, quick-check: deepseek_flash, qwen36_flash (or the CLI's free tier)
-#   code-review, alternative-review: deepseek_v32, kimi_k25; stronger: grok, gemini_pro
+#   code-review, alternative-review: deepseek_v32, kimi_k25; stronger: grok
 #   architecture, reasoning: deepseek_v4_pro; stronger: grok, qwen38_max
-#   large-context: kimi_k25; stronger: gemini_pro
+#   large-context: kimi_k25
 #   opus, fable, sol, astra: through their subscriptions (Claude Code, Codex); here only
 #   as a fallback when that lane is down.
 
@@ -47,6 +47,7 @@ destination = ["large-context", "code-review", "alternative-review"]
 score = 7.4
 score_n = 5
 cost_tier = "moderate"
+explicit_only = true
 
 [models.usa.xai.grok]
 name = "Grok 4.7"

@@ -24,7 +24,7 @@ the quorum - relevant because a Codex model can be at capacity.
 import concurrent.futures, json, os, re, shutil, subprocess, sys, time
 
 # Hooks inherit a non-interactive PATH, which on Linux omits ~/.local/bin; the helpers
-# (model-id, openrouter-cli) and claude/agy/codex live in one of these on both hosts.
+# (model-id, openrouter-cli) and claude/codex live in one of these on both hosts.
 EXTRA_PATH = ["/opt/homebrew/bin", "/usr/local/bin", os.path.join(os.path.expanduser("~"), ".local", "bin")]
 
 
@@ -90,10 +90,10 @@ def log(msg):
 
 
 def _augmented_path():
-    """PATH with the places claude/agy/codex live on both a Mac and a Linux host.
+    """PATH with the places claude/codex live on both a Mac and a Linux host.
 
     Hooks inherit a non-interactive PATH, which on Linux omits ~/.local/bin -
-    that omission is why `command -v agy` reported the binary missing.
+    that omission is why the hook reported binaries missing.
     """
     return ":".join(EXTRA_PATH + [os.environ.get("PATH", "")])
 

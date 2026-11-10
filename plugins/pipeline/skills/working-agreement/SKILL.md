@@ -1,6 +1,6 @@
 ---
 name: working-agreement
-description: The canonical plan-first pipeline - plan with its own review cycle (parallel reviewers, then gemini/codex), implement, gate, staged review (parallel reviewers, standards audit, external reviewers), one-commit completion with cleanup - plus per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/YYMMDD.NNNN.slug.md, recording or triaging a side-question in .agents/plans/backlog/ (the plan and backlog rules themselves live in the task-management skill), invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many parallel reviewers to run.
+description: The canonical plan-first pipeline - plan with its own review cycle (parallel reviewers, then codex), implement, gate, staged review (parallel reviewers, standards audit, external reviewers), one-commit completion with cleanup - plus per-role model/effort assignments, collective blocking decisions, and the delta form a project's CLAUDE.md keeps instead of restating it. Load before planning, implementing, reviewing, or completing non-trivial work in a repo whose CLAUDE.md carries a "Working agreement" block - writing or reading a .agents/plans/YYMMDD.NNNN.slug.md, recording or triaging a side-question in .agents/plans/backlog/ (the plan and backlog rules themselves live in the task-management skill), invoking pipeline:new-plan or pipeline:complete-plan, launching architect / engineer / reviewer / testdoctor agents, running the project gate before review, or deciding how many parallel reviewers to run.
 ---
 
 # Working agreement
@@ -10,7 +10,7 @@ pipeline agents share. A project's own `CLAUDE.md` restates none of it — it
 carries only its delta (gate command, focus override, branching).
 
 The skills this agreement and the pipeline agents name by their bare name
-(`task-management`, `workflow`, `cli-git`, `ai-gemini`, `ai-codex`, ...) and the
+(`task-management`, `workflow`, `cli-git`, `ai-codex`, ...) and the
 commands they call (`plan-name.sh`, `model-id`, `second-opinion.sh`,
 `codex-limits.py`, ...) come from the `core` plugin, which `pipeline` depends on:
 plugin users find these skills as `core:<name>`, and the commands on the Bash
@@ -27,9 +27,9 @@ tool's `PATH`. When they are missing, install core@starterkit.
    - **Claude plan review** — 2-3 parallel `reviewer` agents (opus, medium),
      one focus each, over the plan; findings go back to the architect and the
      cycle repeats until the plan is approved.
-   - **External plan review** — one general external review from gemini
-     (`g-pro`, high effort) via the `ai-gemini` skill. Fold its
-     recommendations in, or record in the plan why one was rejected.
+   - **External plan review** — one general external review from Codex
+     (`sol`) via the `ai-codex` skill. Fold its recommendations in, or record
+     in the plan why one was rejected.
 2. **Code** — the `engineer` agent (haiku, medium effort) executes the
    plan's tasks with tests: Codex (`luna`, medium reasoning) writes the
    code, the engineer verifies and gates it. When Codex cannot run (quota,
@@ -52,22 +52,8 @@ tool's `PATH`. When they are missing, install core@starterkit.
      the goal is code that reads as if the owner wrote it. The owner keeps
      growing that rule set; never skip this audit and never ask whether to run
      it.
-   - **External review, only when something blocks.** A finding that would
-     block is not settled inside one model family: state your own position,
-     then run the owner's wrapper, which assembles the material and merges the
-     outside verdicts into one ranked report.
-
-     ```sh
-     second-opinion.sh --target branch --question '<the finding>'
-     ```
-
-     `--target` also takes `working`, `staged`, `commit:REF`, `files:A,B,C`;
-     `--help` carries the rest. It drives `agy` (the Gemini client - there is no
-     `gemini` binary on these machines) and optionally OpenRouter. **No blocker,
-     no external call**: a cycle with nothing to escalate must not spend a paid
-     quota.
-     Agreement settles it and the cycle continues; only a failed consensus
-     reaches the owner, with each position stated.
+   - **External review** — follow `workflow/references/review.md` for Codex
+     review, contested blockers, and escalation.
    At any phase, a finding that does not block the implementation goes to
    `.agents/plans/backlog/` with its severity recorded — the cycle does not stall on
    it, and nothing is silently dropped.
@@ -95,19 +81,17 @@ their own contexts, so a main-thread compaction never kills them.
 
 ## Models and effort
 
-| Role | Claude | Gemini | Codex |
-|---|---|---|---|
-| architect / plan review | opus + medium | `g-pro` + high | — |
-| engineer | haiku + medium (drives Codex; writes only as last fallback) | — | `luna` + medium (writes the code) |
-| reviewer | opus + medium | `g-pro` + high | `luna` |
-| testdoctor | opus + medium | — | — |
+| Role | Claude | Codex |
+|---|---|---|
+| architect / plan review | opus + medium | `sol` + high |
+| engineer | haiku + medium (drives Codex; writes only as last fallback) | `luna` + medium (writes the code) |
+| reviewer | opus + medium | `sol` + high |
+| testdoctor | opus + medium | — |
 
 Medium is the default effort for every Claude role: the owner's call on
 2026-10-04, trading depth per call for headroom across the whole cycle. Raise
 one role in its agent frontmatter when a project needs it.
-(`g-pro` offers only low/high effort — verified against the agy
-catalog; high is the review tier. Test diagnosis is judgment work, hence
-testdoctor rides the reviewer tier.)
+Test diagnosis is judgment work, hence testdoctor rides the reviewer tier.
 
 **A role's model is fixed; never downgrade it on your own.** A stage that
 stalls or times out is retried on the same model with a tighter brief:
@@ -117,26 +101,19 @@ is the owner's call, asked explicitly — not a `model:` override mentioned in
 passing. The engineer's fallback is the one exception, and it is not a choice
 made on the fly: haiku writes only when Codex cannot run.
 
-The two external reviewers sit at deliberately different tiers because their
-plans behave differently. Gemini runs at its top tier: measured over the
-week to 2026-09-13 the Pro plan stood at 1% of its weekly allowance, so the
-cheap tier was bought with quality for a constraint that does not exist.
-Codex stays at its cheapest tier, and since 2026-10-04 it also writes the
-code, so implementation spends the same weekly allowance as the external
-review. When that allowance runs out, haiku writes the code. Check the
-plan with `codex-limits.py`. The
-week of 2026-09-13 showed the allowance exhausted on day one, a reading
-possibly polluted by free-tier usage; as of 2026-10-04 the weekly window
-stood at 2% used.
+Codex runs two models from one weekly allowance: `sol` for the external
+plan review, the external code review and blocking decisions, `luna` for
+writing code. When that allowance runs out, haiku writes the code. Check the
+plan with `codex-limits.py`.
 
-Gemini and codex are reached through the `ai-gemini` and `ai-codex` skills
-(headless CLIs). They see nothing of the session: every call carries
-self-contained context and a concrete question.
+Codex is reached through the `ai-codex` skill (a headless CLI). It sees
+nothing of the session: every call carries self-contained context and a
+concrete question.
 
 ## Blocking decisions
 
 A blocker is not an automatic question to the owner. State the options, ask
-gemini and codex (their reviewer tiers), and weigh the three positions:
+codex (`sol`), and weigh the two positions:
 
 - **Consensus** → take the decision, record the choice, the reasoning, and
   the reversal path in the plan, and keep moving.

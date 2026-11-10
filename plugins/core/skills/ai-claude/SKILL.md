@@ -1,13 +1,13 @@
 ---
 name: ai-claude
-description: Invoke a fresh headless Claude (`claude -p`) for utility LLM calls and fresh-context checks - distill a transcript or log, review a text against rules, look at a question without this session's assumptions. Use when the user says "спроси свежего клода", "прогони через haiku", or when a script/hook needs an embedded Claude call. Not a second opinion - same model family; Codex/Gemini run only when the owner asks for them (ai-codex, ai-gemini).
+description: Invoke a fresh headless Claude (`claude -p`) for utility LLM calls and fresh-context checks - distill a transcript or log, review a text against rules, look at a question without this session's assumptions. Use when the user says "спроси свежего клода", "прогони через haiku", or when a script/hook needs an embedded Claude call. Not a second opinion - same model family; Codex and Gemini run only where `ai-codex` and `ai-gemini` say.
 ---
 
 # Headless Claude calls
 
 `claude -p` runs one prompt non-interactively and prints the response. Same
 model family as this session: a utility call, not a second opinion. It burns
-the Claude subscription quota, unlike `codex` and `agy`.
+the Claude subscription quota, unlike `codex`.
 
 ## Canonical invocation
 
@@ -43,7 +43,7 @@ printf '%s' "CONTEXT" | claude -p --model opus 'QUESTION' 2>/dev/null
 
 ## When not to use this
 
-- As a second opinion: no vendor diversity, and external reviewers run only
-  when the owner asks (`ai-codex`, `ai-gemini`).
+- As a second opinion: no vendor diversity; external reviewers run only where
+  `ai-codex` and `ai-gemini` say.
 - For anything the session can do itself: zero session context, startup
   latency, quota.
