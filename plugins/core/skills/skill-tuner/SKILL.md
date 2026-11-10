@@ -130,8 +130,8 @@ task first, then tune, then log. Everything below happens in the same turn.
    - no contradiction with the owner's global instructions or other rules in the skill;
    - small (a few lines; a larger rewrite is drafted, not applied).
 
-   Then the **review chain**, one reviewer after another, each in a fresh context and
-   blind to the others' verdicts. Write the material to a file with the Write tool and pass
+   Then the **review chain**, one reviewer after another, each in a fresh context and, in
+   the first round, blind to the others' verdicts. Write the material to a file with the Write tool and pass
    it on stdin, never as an argument: the cleaned remark (English), the triage, the diff,
    the full target skill, the `writing-instructions` rules, and the "Who may change what"
    rules of the owner's `AGENTS.md`, with the instruction that there is no gate and the
@@ -148,16 +148,28 @@ task first, then tune, then log. Everything below happens in the same turn.
    `queued`. Verdicts:
    - `approve` — the edit addresses the remark, is the smallest that would, and contradicts
      nothing in the skill, other skills, or the global instructions; pass to the next
-     reviewer;
-   - `revise` — with the concrete change; `luna` redrafts once and the chain restarts from
-     `opus`;
+     reviewer. Wording preferences that are not defects go on `note:` lines: they never
+     block, are never applied, and appear in the report;
+   - `revise` — only for a defect: the edit does not address the remark, is not the
+     smallest that would, or contradicts a rule the reviewer quotes; with replacement text
+     for each defect;
    - `reject` — the remark is a one-off (`none`), the target is wrong, or the edit would
      overfit; stop, nothing to undo, status `rejected`.
 
+   After a `revise`, `luna` applies the replacement text as in step 4. Only the reviewer
+   that asked re-checks the new diff (its defects fixed, nothing else changed); then the
+   chain continues with the next reviewer. An earlier reviewer sees the edit again only
+   when the redraft changed lines it approved. From the second round on, every reviewer
+   also gets the earlier findings; a `revise` that undoes what another reviewer required is
+   a conflict: do not apply, show both positions in chat, status `drafted`.
+
+   At most 2 redraft rounds per remark; step 4's one re-ask of `luna` for a missed change
+   does not count. A `revise` after round 2 → do not apply: show the diff and every
+   reviewer's position in chat, status `drafted`.
+
    All three `approve` → copy `luna`'s reviewed file over the target and go to step 6.
    Draft-only targets (see Authority) and larger rewrites are shown in chat instead, status `drafted`; skip
-   step 6. Any `revise` after the one redraft → do not apply: show the diff and every
-   reviewer's position in chat, status `drafted`.
+   step 6.
 6. **Commit one change per remark** in the repository that holds the skill:
    - public skills (starterkit plugins): a branch in a starterkit clone, never `main`;
      push only after `public-gate.sh --range "<remote branch or base>..HEAD"` reports 0
