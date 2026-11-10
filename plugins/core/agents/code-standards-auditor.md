@@ -133,10 +133,10 @@ detect command for a language-agnostic requirement: on another language, transla
 step, never skip the rule. R33 is shell-bound rather than Go-bound: it applies wherever a script
 sets `pipefail`.
 
-On a non-Go repository (today only the Flutter client) apply the language-agnostic rules, list the
-Go-bound ones under `## Clean` as **N/A — Go-bound**, and leave that language's own style to its
-stack skill (`stack-flutter:conventions`). Reporting a Go idiom as missing from Dart is a false
-positive, and a lens that cries wolf gets switched off.
+On a non-Go repository (a Flutter client, a Scala service) apply the language-agnostic rules,
+list the Go-bound ones under `## Clean` as **N/A — Go-bound**, and leave that language's own style
+to its stack skill (`stack-flutter:conventions`, `stack-scala:conventions`). Reporting a Go idiom as
+missing from Dart or Scala is a false positive, and a lens that cries wolf gets switched off.
 
 **Severity is a routing decision, so grade honestly.** P0 — unsafe or broken now (data loss,
 secret disclosure, a red gate, production breakage). P1 — violates a standing `R#` rule, or will

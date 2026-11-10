@@ -1,0 +1,8 @@
+{
+  "name": "stack-scala",
+  "description": "Scala stack: project conventions (expression style, call and constructor form, declarations, duplication and hygiene).",
+  "version": "2026.001",
+  "author": {
+    "name": "Seilbek"
+  }
+}

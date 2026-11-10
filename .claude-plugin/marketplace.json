@@ -40,6 +40,12 @@
       "category": "stack"
     },
     {
+      "name": "stack-scala",
+      "source": "./plugins/stack-scala",
+      "description": "Scala/ZIO conventions: expression style, call and constructor form, declarations, duplication and hygiene.",
+      "category": "stack"
+    },
+    {
       "name": "knowledge",
       "source": "./plugins/knowledge",
       "description": "Distilled engineering doctrine from foundational books: DDD, SQL antipatterns, PostgreSQL performance, MongoDB modeling, testing, production stability, data systems, software design.",
