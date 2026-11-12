@@ -17,3 +17,8 @@ What you find decides how you work, not whether you work:
   different branch, use a separate worktree (`git worktree add`) instead.
 - When the change does touch files someone else has in flight, defer it; report what is in
   flight and the command that re-runs the change once the tree is clean.
+- Remove each worktree you or your subagents created with `git worktree add` or an Agent run
+  with `isolation: "worktree"` once its branch is merged, pushed, or abandoned and its tree is
+  clean: `git worktree remove <path>`. Never use `--force` or recursive `rm`. Hand the ones you
+  may not remove to the owner as one runnable command of their `git worktree remove <path>` calls
+  (`common-contracts`, owner-only actions).
