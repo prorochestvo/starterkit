@@ -51,5 +51,9 @@ When asked what is blocked on the owner: - provide the one command to
 run; - state what it changes and whether anything is irreversible; -
 state what evidence the script prints on success.
 
+After handing off an owner-only step, continue authorized work that does
+not depend on its result. State what you will do meanwhile; wait only
+when no such work remains.
+
 Before declaring a task blocked, prepare the owner-action script
 whenever the blocker can be made executable.
