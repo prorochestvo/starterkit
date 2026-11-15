@@ -129,9 +129,11 @@ date in its name. "Груминг <project>" takes every open entry in that orde
 gate calls. At 70% or more on either, do not start, or stop as for an outage — unless the
 owner explicitly allowed grooming past 70% and named the ceiling; then stop at that ceiling.
 
-1. Work on a new branch `chore/backlog-grooming` from the tip of the integration branch, in
-   its own worktree (the `workflow` preflight rule), with the list from `--stale [N]` taken
-   when the pass starts. Before step 7, merge the integration branch into the branch.
+1. Work on a new branch `chore/backlog-grooming` from the tip of the integration branch —
+   `dev`; with no `dev`, the repository's other integration branch (e.g. `stage`, `test`,
+   `alpha`); with neither, `main` — in its own worktree (the `workflow` preflight rule),
+   with the list from `--stale [N]` taken when the pass starts. Before step 7, merge the
+   integration branch into the branch.
 2. Run in the background: one agent, one entry at a time. Run each gate as its own foreground
    command with a 600-second timeout, and apply its answer before the next entry.
 3. For each entry:
@@ -165,7 +167,7 @@ owner explicitly allowed grooming past 70% and named the ceiling; then stop at t
    reopened only on new evidence or the owner's word.
 6. Commit every 10–20 entries, staging only `.agents/plans/backlog`; commit messages
    follow the `cli-git` commits rule.
-7. At the end, squash-merge the branch into the integration branch under the project's
+7. At the end, squash-merge the branch into that integration branch under the project's
    branch rules, push, and delete the branch and the worktree. Report the kept / rewritten /
    done / dropped counts, one line per closed or rewritten entry with its reason, the weak
    gates, and the usage at the end.
