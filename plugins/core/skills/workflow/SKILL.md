@@ -9,7 +9,7 @@ Apply this skill when implementing or reviewing development changes, when report
 
 | Reference | Load when |
 |---|---|
-| `references/preflight.md` | Before acting on or reporting about an unopened repository/host, or before a sweep across several |
+| `references/preflight.md` | Before acting on or reporting about an unopened repository/host, before a sweep across several, or when a branch worked in a worktree is merged, pushed, or abandoned |
 | `references/verification.md` | Implementing or verifying code changes |
 | `references/review.md` | Running the mandatory review cycle or a requested review |
 | `references/standards-extraction.md` | User feedback or review yields reusable rules |
