@@ -72,6 +72,15 @@ the owner and accept new commands while stages run. Do not block the
 conversation waiting on a stage: report stage completions as they land, and
 interleave new owner requests with the running pipeline.
 
+A stage reports that it is waiting on background work only with a handle: a PID, job id, or
+log path. A claim without a handle is not started; send the stage back at once. Check the
+handle when the claim arrives and again each time the stage has been silent for 15 minutes,
+not continuously. Quiet work is not dead work: a live process whose log has not moved is
+still running. Never blindly restart work; if only the watcher died, such as after a dropped
+connection to a remote job, reconnect and reconcile the job's state first. Long-running
+watchers touch a heartbeat file every minute and name it in their handle; a heartbeat older
+than 5 minutes counts as a dead watcher.
+
 Context hygiene: auto-compact triggers at 50% of the context window
 (`autoCompactWindow` in the global settings). Past that line, start no new
 stage: finish the active tasks and compact as soon as all of them are done —
