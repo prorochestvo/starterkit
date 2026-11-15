@@ -12,6 +12,10 @@ work on or triage it; never read `history/` unless asked.
 
 ## The gate, before an entry is written
 
+Nothing critical goes into the backlog. A critical finding — a security exposure, a
+data-loss risk, broken production or stage, a failing gate the current work depends on —
+is fixed in the current work right away, never filed.
+
 A draft entry is written only when the gate says it is needed. Write the draft to a
 temporary file and run, in the background, so the task goes on:
 
@@ -40,7 +44,7 @@ the next free index across the directory, `history/` included:
 
 `P` is `H`, `M`, or `L`:
 
-- `H` — correctness, security, data loss, or something already breaking;
+- `H` — a correctness, security, or data-loss concern that is not critical (above);
 - `M` — a real defect or gap that is not urgent;
 - `L` — cleanup, consistency, nice-to-have.
 
