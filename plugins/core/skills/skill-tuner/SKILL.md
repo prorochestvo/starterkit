@@ -115,14 +115,19 @@ task first, then tune, then log. Everything below happens in the same turn.
 4. **Draft the smallest edit** that would have prevented the remark: one rule, example, or
    step — in the skill's own style, following the `writing-instructions` skill. The
    orchestrator states the change it wants (target file, what to sharpen or add, the
-   constraints to keep); `luna` returns the whole new file, nothing else:
+   constraints to keep); `luna` returns only the replacement text for the requested block,
+   nothing else — one `codex exec` call per block when there are several. Before calling
+   `luna`, choose an old block that occurs exactly once in the target file, widening the
+   block as needed until it does; ask for replacement text for that whole block. Run:
    `codex exec --ephemeral --skip-git-repo-check --ignore-user-config -s read-only
-   -m "$(model-id luna)" -o <out> "<prompt>" </dev/null`, with the target file and the
-   `writing-instructions` rules in the prompt. Build the diff yourself with
-   `git diff --no-index <current file> <out>` — `luna` writes broken hunk headers, so it
-   never writes the diff. Check the diff changes only what was asked; if not, re-ask `luna`
-   once with the gap named — never edit its text yourself; still off → no edit, show the
-   intended change in chat, status `drafted`. Codex down → `openrouter-cli -t luna "$(cat <prompt-file>)"`; both
+   -m "$(model-id luna)" -o <out> "<prompt>" </dev/null`, with the target file, the old
+   block, and the `writing-instructions` rules in the prompt. Splice `luna`'s text into a
+   copy of the file byte for byte — no re-wrapping, no normalisation — and keep the final
+   newline. Build the diff yourself with `git diff --no-index <current file>
+   <spliced file>` — `luna` writes broken hunk headers, so it never writes the diff. Check
+   the diff changes only what was asked; if not, re-ask `luna` once with the gap named —
+   never edit its text yourself; still off → no edit, show the intended change in chat,
+   status `drafted`. Codex down → `openrouter-cli -t luna "$(cat <prompt-file>)"`; both
    down → no edit, status `queued`. Nothing is written to the skill yet.
 5. **Verify, then review the diff** — still unapplied:
    - confined to the target skill's instruction files;
@@ -145,7 +150,9 @@ task first, then tune, then log. Everything below happens in the same turn.
       read-only -m "$(model-id sol)" -c model_reasoning_effort="medium" -o <out> - < <file>`.
 
    A reviewer that cannot be reached stops the chain: no edit, nothing sent, status
-   `queued`. Verdicts:
+   `queued`; at the start of the next run, before the new remark, re-run from step 2 each
+   `queued` row in every retained monthly store; the insert below writes each row back to
+   the store its id names. Verdicts:
    - `approve` — the edit addresses the remark, is the smallest that would, and contradicts
      nothing in the skill, other skills, or the global instructions; pass to the next
      reviewer. Wording preferences that are not defects go on `note:` lines: they never
@@ -167,7 +174,8 @@ task first, then tune, then log. Everything below happens in the same turn.
    does not count. A `revise` after round 2 → do not apply: show the diff and every
    reviewer's position in chat, status `drafted`.
 
-   All three `approve` → copy `luna`'s reviewed file over the target and go to step 6.
+   All three `approve` → write the spliced file that the chain reviewed over the target and
+   go to step 6.
    Draft-only targets (see Authority) and larger rewrites are shown in chat instead, status `drafted`; skip
    step 6.
 6. **Commit one change per remark** in the repository that holds the skill:
@@ -175,8 +183,11 @@ task first, then tune, then log. Everything below happens in the same turn.
      push only after `public-gate.sh --range "<remote branch or base>..HEAD"` reports 0
      failing; write the PR title and body to files, gate each with `public-gate.sh --text`,
      then open the PR with `gh pr create --body-file`. Never edit `version`: the plugin
-     version workflow stamps it. The change takes effect after the owner merges the PR and
-     the hosts update the marketplace; log the PR URL in `note`, rollback is a revert PR;
+     version workflow stamps it. Once `gh pr checks --watch` shows no failing or pending
+     check ("no checks reported" counts as passed), merge it yourself with
+     `gh pr merge --squash --subject <subject> --body <body>` (the `cli-git` commit rules).
+     The change takes effect once the hosts update the marketplace; log the PR URL in
+     `note`, rollback is a revert PR;
    - private skills: the configuration repository that holds the skill — stage only the
      skill's own paths, never `git add -A`; other uncommitted files there belong to other
      sessions;
@@ -199,10 +210,10 @@ insert it with parameters, never by pasting text into SQL:
 
 ```bash
 python3 - /path/to/row.json "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/runtime-state/skills/skill-tuner" <<'EOF'
-import json, os, sqlite3, sys, time
+import json, os, sqlite3, sys
 row = json.load(open(sys.argv[1]))
 d = sys.argv[2]; os.makedirs(d, mode=0o700, exist_ok=True)
-p = os.path.join(d, time.strftime("%Y-%m", time.gmtime()) + ".sqlite")
+p = os.path.join(d, row["id"][:4] + "-" + row["id"][4:6] + ".sqlite")
 new = not os.path.exists(p)
 db = sqlite3.connect(p)
 if new: os.chmod(p, 0o600)
