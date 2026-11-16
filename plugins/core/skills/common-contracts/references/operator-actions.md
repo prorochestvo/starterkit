@@ -9,6 +9,13 @@ or an irreversible action not already authorized.
 
 Do not delegate work the agent can perform itself.
 
+Before running or handing off a step, check that it is still needed; for
+a delete, confirm the target exists (for example, use `git ls-remote`
+for a remote branch), since a stale local view is not evidence. Do not
+hand off an optional cleanup step that was denied, such as deleting a
+merged branch, removing a worktree, or removing replaced files; report it
+as left over.
+
 ## Build the handoff while working
 
 As soon as an owner-only action becomes likely, start the script and
