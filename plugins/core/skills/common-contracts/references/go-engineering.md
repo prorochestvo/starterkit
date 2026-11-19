@@ -61,6 +61,19 @@ Project-agnostic utilities belong under `internal/tools/<name>`. Project
 layer packages such as `application`, `gateway`, and `infrastructure`
 remain explicit.
 
+Every external system a service calls (for example, an LLM provider, a
+payment provider, a messaging API, an ad or analytics tracking API, object
+storage, email or SMS) is reached through an interface declared by the
+consuming application (R2), even when only one vendor exists. One adapter
+per vendor implements it; vendor SDK types, request/response payloads and
+vendor errors stay inside the adapter, and callers depend only on the
+interface and domain types. The composition root selects the adapter from
+decoded configuration (R5), for example by DSN scheme, so switching vendor
+is a configuration change and a restart, not a code change. A stub adapter,
+selected the same way, serves tests and local runs; it is real
+configuration, not a test seam under R18 or R28. The rule requires the
+seam, not failover or multi-provider routing; those are separate decisions.
+
 Do not split one concern into parallel packages that serve the same
 role.
 
