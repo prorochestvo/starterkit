@@ -70,8 +70,9 @@ rename; never assume the full set, never let one missing path abort the run.
 - **Project-local skills are residents, not legacy** — keep them. They live in
   `.agents/skills/`, and `.claude/skills` is a committed relative symlink to
   `../.agents/skills` so Claude Code still finds them. A real `.claude/skills/`
-  directory → if `.agents/skills/` holds nothing but `.gitkeep`, remove it entirely
-  (`git rm -r`, or `rm -r` when untracked) so `git mv` does not nest; then
+  directory → if `.agents/skills/` holds nothing but `.gitkeep`, remove each
+  `.gitkeep` file by name (`git rm <path>`, or `rm <path>` when untracked), then
+  remove the emptied directories with `rmdir`, deepest first, so `git mv` does not nest; then
   `mkdir -p .agents && git mv .claude/skills .agents/skills &&
   ln -s ../.agents/skills .claude/skills`, then re-point `.claude/skills/` path
   references to `.agents/skills/`; both a real `.claude/skills/` and a non-empty
@@ -112,9 +113,11 @@ rename; never assume the full set, never let one missing path abort the run.
 ## 5. `.agents/` layout (mechanical)
 
 - Legacy root `plans/` exists → migrate it, in two commits:
-  1. **Move.** If `.agents/plans/` holds nothing but `.gitkeep` files, remove it entirely
-     (`git rm -r`, or `rm -r` when untracked) — an empty directory left behind makes
-     `git mv` nest the tree; if it holds anything else, stop and report both trees, since
+  1. **Move.** If `.agents/plans/` holds nothing but `.gitkeep` files, remove each
+     `.gitkeep` by name (`git rm <path>`, or `rm <path>` when untracked), then remove
+     the emptied directories with `rmdir`, deepest first — an empty directory left
+     behind makes `git mv` nest the tree; if it holds anything else, stop and report
+     both trees, since
      merging two numbered trees is the owner's call. Move a root `plans/documentations/`
      to `.agents/specs/` first, then `mkdir -p .agents && git mv plans .agents/plans`.
      Commit the moves alone, so `git log --follow` keeps each file's history.
