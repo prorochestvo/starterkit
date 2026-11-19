@@ -39,7 +39,7 @@ The helpers below (`model-id`, `codex-limits.py`) are commands of the `core` plu
    ```sh
    codex exec --ephemeral --skip-git-repo-check -s workspace-write -C "$(git rev-parse --show-toplevel)" \
      -m "$(model-id luna)" -c model_reasoning_effort="medium" "$TASK" \
-     -o "$TMPDIR/codex-out.txt" > "$TMPDIR/codex.log" 2>&1
+     -o "$TMPDIR/codex-out.txt" < /dev/null > "$TMPDIR/codex.log" 2>&1
    ```
 
    Run it with a Bash timeout of at least 600000 ms. Keep `-s workspace-write`; never `--dangerously-bypass-approvals-and-sandbox`. Codex reads `AGENTS.md` (a project's `CLAUDE.md` links to it; where it does not, Codex never sees `CLAUDE.md`) and nothing of this session, so `$TASK` is self-contained: the plan task verbatim, the files to touch, the instruction to read `CLAUDE.md` and follow it, the stack's test layout, tests in the same change, and the boundaries — no commits, no network commands, no `.env`.
