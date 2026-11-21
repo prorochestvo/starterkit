@@ -21,8 +21,10 @@ agreement's external plan review run codex on `sol` (`ai-codex`). Otherwise no c
 ## Canonical invocation
 
 ```bash
-openrouter-cli -m "$(model-id --openrouter g-pro)" --think high -n 8000 --timeout 300 "$(cat "$SCRATCHPAD/gemini-prompt.md")"
+openrouter-cli -m "$(model-id --openrouter g-pro)" --think high -n 8000 --timeout 300 "$(cat "<scratch>/gemini-prompt.md")"
 ```
+
+`<scratch>` is the literal path of your scratch subdirectory (`workflow`, Scratch files).
 
 Gemini on OpenRouter requires reasoning: without `--think` the call answers 400.
 
