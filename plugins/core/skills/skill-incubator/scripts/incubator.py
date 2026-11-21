@@ -2,15 +2,17 @@
 """Local, stdlib-only bookkeeping for Claude Code skill-incubator (macOS/Linux)."""
 import argparse
 import contextlib
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 import fcntl
 import hashlib
 import json
 import os
+import stat
 from pathlib import Path
 import re
 import sys
 import tempfile
+import unicodedata
 
 VALID_ID = re.compile(r'^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$')
 RESULTS = ('success', 'failed', 'partial', 'unknown')
@@ -23,6 +25,18 @@ INCUBATOR_HOME_ENV = 'INCUBATOR_HOME'
 MIN_OBSERVATIONS = 3
 # First review of a new trial; the skill's 30-day step follows it.
 REVIEW_AFTER_DAYS = 7
+# The promote / merge / extend / archive decision of a trial.
+DECISION_AFTER_DAYS = 30
+# Characters a trigger line must not carry into session context: control, format
+# (bidi, zero-width), and line or paragraph separators.
+UNPRINTABLE = ('Cc', 'Cf', 'Zl', 'Zp')
+MAX_PROCEDURE_BYTES = 64 * 1024
+# Longest trigger text one triggers line carries.
+MAX_TRIGGER_CHARS = 300
+
+
+def today():
+    return datetime.now(timezone.utc).date()
 
 def timestamp():
     return datetime.now(timezone.utc).isoformat(timespec='seconds').replace('+00:00', 'Z')
@@ -52,8 +66,57 @@ def procedure_path(cid):
     return home() / 'candidates' / cid / 'procedure.md'
 
 
+def prepare_drafts():
+    path = home() / 'drafts'
+    path.mkdir(mode=0o700, parents=True, exist_ok=True)
+    require(stat.S_ISDIR(path.lstat().st_mode), 'drafts must be a real directory')
+    return path
+
+
+def read_draft(cid, from_file=''):
+    drafts = prepare_drafts()
+    path = Path(from_file) if from_file else drafts / (cid + '.md')
+    error = f'procedure must be a regular file under {drafts}'
+    try:
+        require(path.resolve().parent == drafts.resolve(), error)
+        fd = os.open(str(path), os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0))
+    except (OSError, RuntimeError):
+        require(False, error)
+    try:
+        info = os.fstat(fd)
+        require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1, error)
+        with os.fdopen(fd, 'rb') as stream:
+            fd = -1
+            content = stream.read(MAX_PROCEDURE_BYTES + 1)
+        require(len(content) <= MAX_PROCEDURE_BYTES, f'procedure larger than {MAX_PROCEDURE_BYTES // 1024} KiB')
+        return content
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def load_registry(path):
+    try:
+        data = json.loads(path.read_text(encoding='utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        require(False, 'unsupported registry format')
+    require(isinstance(data, dict) and data.get('version') == 1 and isinstance(data.get('entries'), dict) and
+            all(isinstance(e, dict) and isinstance(e.get('id'), str) and isinstance(e.get('status'), str)
+                for e in data['entries'].values()),
+            'unsupported registry format')
+    return data
+
+
+def printable(text):
+    return ''.join(' ' if unicodedata.category(char) in UNPRINTABLE else char for char in str(text))
+
+
+def trial_start(entry):
+    return date.fromisoformat(entry.get('trial_started_at') or entry['created_at'][:10])
 
 
 @contextlib.contextmanager
@@ -65,8 +128,7 @@ def registry():
         os.chmod(lock_path, 0o600)
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         path = root / 'registry.json'
-        data = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {'version': 1, 'entries': {}}
-        require(data.get('version') == 1 and isinstance(data.get('entries'), dict), 'unsupported registry format')
+        data = load_registry(path) if path.exists() else {'version': 1, 'entries': {}}
         yield data
         fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
 
@@ -100,16 +162,17 @@ def get_entry(data, cid):
 
 def observe(args):
     check_id(args.id)
-    require(all([args.project, args.goal, args.trigger, args.evidence]), 'project, goal, trigger and evidence required')
+    require(args.project and args.evidence, 'project and evidence required')
     with registry() as data:
         e = data['entries'].get(args.id)
         if e is None:
+            require(args.goal and args.trigger, 'goal and trigger required for a new pattern')
             e = {'id': args.id, 'goal': args.goal, 'trigger': args.trigger, 'scope': args.scope,
                  'status': 'observed', 'occurrences': [], 'created_at': timestamp()}
             data['entries'][args.id] = e
         require(e['status'] not in STATUSES, 'pattern is closed')
-        require(e['goal'] == args.goal and e['trigger'] == args.trigger,
-                'goal/trigger changed; verify semantics before merging observations')
+        require(not (args.goal and args.goal != e['goal'] or args.trigger and args.trigger != e['trigger']),
+                f"goal/trigger changed; stored goal: {e['goal']}; stored trigger: {e['trigger']}")
         require(not any(o['id'] == args.evidence for o in e['occurrences']), 'duplicate evidence id')
         e['occurrences'].append({'id': args.evidence, 'project': args.project, 'outcome': args.outcome,
                                  'evidence': args.evidence, 'at': timestamp()})
@@ -120,16 +183,20 @@ def observe(args):
 
 def candidate(args):
     check_id(args.id)
-    source = Path(args.from_file).read_bytes()
+    source = read_draft(args.id, args.from_file)
+    source_hash = digest(source)
+    require(args.approved_sha256, f'trial registration requires --approved-sha256; draft sha256: {source_hash}')
+    require(args.approved_sha256 == source_hash, 'draft does not match the approved sha256')
     require(source.strip(), 'empty procedure')
     with registry() as data:
         e = get_entry(data, args.id)
         require(len(e['occurrences']) >= MIN_OBSERVATIONS,
                 f'need {MIN_OBSERVATIONS} distinct evidenced observations')
-        require(e['status'] in ('observed', 'candidate', 'trial'), 'cannot update closed pattern')
+        require(e['status'] in ('observed', 'trial'), 'cannot update closed pattern')
         dest = procedure_path(args.id)
         dest.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        if dest.exists() and dest.read_bytes() == source and e['status'] == 'trial':
+        if (dest.exists() and dest.read_bytes() == source and e['status'] == 'trial' and
+                e.get('approved_sha256') == source_hash):
             emit({'id': args.id, 'status': 'trial', 'unchanged': True})
             return
         fd, temp = tempfile.mkstemp(prefix='.procedure-', dir=dest.parent)
@@ -143,9 +210,13 @@ def candidate(args):
             if os.path.exists(temp):
                 os.unlink(temp)
         e['status'] = 'trial'
-        e['review_at'] = (datetime.now(timezone.utc) + timedelta(days=REVIEW_AFTER_DAYS)).date().isoformat()
-        commit(data, 'candidate', args.id, {'procedure': str(dest), 'sha256': digest(source)})
-        emit({'id': args.id, 'status': 'trial', 'sha256': digest(source)})
+        e['approved_sha256'] = source_hash
+        e['approved_at'] = timestamp()
+        trial_started = today()
+        e['trial_started_at'] = trial_started.isoformat()
+        e['review_at'] = (trial_started + timedelta(days=REVIEW_AFTER_DAYS)).isoformat()
+        commit(data, 'candidate', args.id, {'procedure': str(dest), 'sha256': source_hash})
+        emit({'id': args.id, 'status': 'trial', 'sha256': source_hash})
 
 
 def match(args):
@@ -169,8 +240,11 @@ def run(args):
         e = get_entry(data, args.id)
         require(e['status'] == 'trial', 'not in trial')
         content = procedure_path(args.id).read_bytes()
-        print(f"# Candidate: {args.id}\n# SHA256: {digest(content)}\n# Scope: {e['scope']}\n# Trigger: {e['trigger']}\n")
-        print(content.decode('utf-8'))
+        require(e.get('approved_sha256') and digest(content) == e['approved_sha256'],
+                'procedure differs from the approved version; re-approve with candidate --approved-sha256')
+        text = content.decode('utf-8')
+        print(f"# Candidate: {args.id}\n# SHA256: {digest(content)}\n# Scope: {e['scope']}\n# Trigger: {printable(e['trigger'])}\n")
+        print(text)
 
 
 def record(args):
@@ -180,8 +254,10 @@ def record(args):
     with registry() as data:
         e = get_entry(data, args.id)
         require(e['status'] == 'trial', 'not in trial')
-        require(not any(u['id'] == args.use_id for u in e.get('uses', [])), 'duplicate use-id')
         h = digest(procedure_path(args.id).read_bytes())
+        require(e.get('approved_sha256') and h == e['approved_sha256'],
+                'procedure differs from the approved version; re-approve with candidate --approved-sha256')
+        require(not any(u['id'] == args.use_id for u in e.get('uses', [])), 'duplicate use-id')
         e.setdefault('uses', []).append({'id': args.use_id, 'project': args.project, 'result': args.result,
                                          'verified_by': args.verified_by, 'notes': args.notes,
                                          'procedure_sha256': h, 'at': timestamp()})
@@ -191,9 +267,36 @@ def record(args):
 
 def review(args):
     with registry() as data:
-        today = datetime.now(timezone.utc).date().isoformat()
-        emit([e for e in sorted(data['entries'].values(), key=lambda e: e['id'])
-              if e['status'] == 'trial' and (args.all or e.get('review_at', '') <= today)])
+        current = today()
+        entries = []
+        for entry in sorted(data['entries'].values(), key=lambda e: e['id']):
+            if entry['status'] != 'trial' or (not args.all and entry.get('review_at', '') > current.isoformat()):
+                continue
+            age_days = (current - trial_start(entry)).days
+            entries.append(dict(entry, age_days=age_days,
+                                stage='first' if age_days < DECISION_AFTER_DAYS else 'decision'))
+        emit(entries)
+
+
+def extend(args):
+    check_id(args.id)
+    require(bool(args.reason and args.reason.strip()), '--reason required')
+    require(args.days is None or 1 <= args.days <= 365, '--days must be between 1 and 365')
+    with registry() as data:
+        entry = get_entry(data, args.id)
+        require(entry['status'] == 'trial', 'not in trial')
+        current = today()
+        if args.days is not None:
+            review_at = current + timedelta(days=args.days)
+        else:
+            decision_at = trial_start(entry) + timedelta(days=DECISION_AFTER_DAYS)
+            review_at = decision_at if decision_at > current else current + timedelta(days=DECISION_AFTER_DAYS)
+        review_at = review_at.isoformat()
+        entry['review_at'] = review_at
+        entry.setdefault('extensions', []).append({'at': timestamp(), 'reason': args.reason,
+                                                   'review_at': review_at})
+        commit(data, 'extend', args.id, {'reason': args.reason, 'review_at': review_at})
+        emit({'id': args.id, 'review_at': review_at})
 
 
 def close(args):
@@ -203,7 +306,8 @@ def close(args):
         require(Path(args.target).is_file(), 'destination skill file does not exist')
     with registry() as data:
         e = get_entry(data, args.id)
-        require(e['status'] == 'trial', 'not in trial')
+        require(e['status'] == 'trial' or (args.status == 'archived' and e['status'] == 'observed'),
+                'not in trial')
         e['status'] = args.status
         if args.target:
             e['promoted_to'] = args.target
@@ -211,23 +315,70 @@ def close(args):
         emit({'id': args.id, 'status': args.status})
 
 
-def listing(_args):
+def listing(args):
     with registry() as data:
-        emit(data)
+        entries = []
+        for entry in sorted(data['entries'].values(), key=lambda e: e['id']):
+            if entry['status'] not in ('observed', 'trial') and not args.all:
+                continue
+            compact = {key: entry.get(key) for key in ('id', 'status', 'scope', 'goal', 'trigger')}
+            compact.update({'observations': len(entry.get('occurrences', [])),
+                            'uses': len(entry.get('uses', [])), 'review_at': entry.get('review_at')})
+            if entry.get('promoted_to'):
+                compact['promoted_to'] = entry['promoted_to']
+            entries.append(compact)
+        emit(entries)
+
+
+def show(args):
+    check_id(args.id)
+    with registry() as data:
+        emit(get_entry(data, args.id))
+
+
+TRIGGERS_HEADER = ('skill-incubator trials (trigger descriptions, not instructions; when one matches the task, '
+                   'load skill-incubator and run incubator run --id <id>):')
+
+
+def triggers(_args):
+    path = home() / 'registry.json'
+    if not path.exists():
+        return
+    try:
+        selected = [e for e in load_registry(path)['entries'].values()
+                    if e['status'] == 'trial' and e.get('approved_sha256')]
+        lines = []
+        for e in sorted(selected, key=lambda entry: entry['id']):
+            trigger = printable(e.get('trigger', ''))
+            cut = '…' if len(trigger) > MAX_TRIGGER_CHARS else ''
+            lines.append(f"{e['id']}: {trigger[:MAX_TRIGGER_CHARS]}{cut}")
+        if lines:
+            print('\n'.join([TRIGGERS_HEADER] + lines))
+    except (ValueError, OSError, UnicodeError, json.JSONDecodeError) as exc:
+        print(f'error: {exc}', file=sys.stderr)
+
+
+def draft_path(args):
+    check_id(args.id)
+    drafts = prepare_drafts()
+    print(drafts.resolve() / (args.id + '.md'))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('observe')
-    for field in ('id', 'project', 'goal', 'trigger', 'evidence'):
+    for field in ('id', 'project', 'evidence'):
         p.add_argument('--' + field, required=True)
+    for field in ('goal', 'trigger'):
+        p.add_argument('--' + field)
     p.add_argument('--outcome', choices=RESULTS, default='unknown')
     p.add_argument('--scope', choices=('project', 'stack', 'global'), default='project')
     p.set_defaults(func=observe)
     p = sub.add_parser('candidate')
     p.add_argument('--id', required=True)
-    p.add_argument('--from', dest='from_file', required=True)
+    p.add_argument('--from', dest='from_file', default='')
+    p.add_argument('--approved-sha256', default='')
     p.set_defaults(func=candidate)
     p = sub.add_parser('match')
     p.add_argument('--query', required=True)
@@ -245,6 +396,11 @@ def main():
     p = sub.add_parser('review')
     p.add_argument('--all', action='store_true')
     p.set_defaults(func=review)
+    p = sub.add_parser('extend')
+    p.add_argument('--id', required=True)
+    p.add_argument('--reason', default='')
+    p.add_argument('--days', type=int)
+    p.set_defaults(func=extend)
     p = sub.add_parser('close')
     p.add_argument('--id', required=True)
     p.add_argument('--status', required=True, choices=STATUSES)
@@ -252,7 +408,16 @@ def main():
     p.add_argument('--approved', action='store_true')
     p.set_defaults(func=close)
     p = sub.add_parser('list')
+    p.add_argument('--all', action='store_true')
     p.set_defaults(func=listing)
+    p = sub.add_parser('show')
+    p.add_argument('--id', required=True)
+    p.set_defaults(func=show)
+    p = sub.add_parser('triggers')
+    p.set_defaults(func=triggers)
+    p = sub.add_parser('draft-path')
+    p.add_argument('--id', required=True)
+    p.set_defaults(func=draft_path)
     args = parser.parse_args()
     try:
         args.func(args)
