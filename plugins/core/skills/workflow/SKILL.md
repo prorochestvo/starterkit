@@ -30,6 +30,8 @@ Once a task is understood and any stated blocker is resolved, run it end to end 
 
 Commit before every reviewer, never after: reviewers hold write tools and may check out other revisions. Do not invoke external reviewers unless `references/review.md` permits it. `cli-git` governs Git mechanics; `cli-github` governs GitHub operations; `common-contracts` governs implementation requirements. Rule extraction is event-driven, not an obligatory step after every review.
 
+Solve problems that have happened, not ones that might. Do not propose, build, or keep a fallback, contingency path, or safeguard for a failure that has not occurred (for example, a standby CI path on hosted runners in case the self-hosted runners fail), unless the user asks for it, an agreed plan includes it, or a loaded skill or contract requires it; handle the failure when it happens.
+
 ## The gate
 
 The gate is `verification` per the glossary: `make verify` (linters, static analysis, tests). A repository without that target does not stop the work:
