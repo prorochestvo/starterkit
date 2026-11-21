@@ -55,6 +55,8 @@ Requires Python 3 on PATH (macOS/Linux). Use `"${CLAUDE_SKILL_DIR}/scripts/incub
 "${CLAUDE_SKILL_DIR}/scripts/incubator" close --id api-regression-check --status archived
 "${CLAUDE_SKILL_DIR}/scripts/incubator" close --id api-regression-check --status promoted \
   --approved --target /absolute/path/to/new/SKILL.md
+"${CLAUDE_SKILL_DIR}/scripts/incubator" close --id api-regression-check --status merged \
+  --approved --target /absolute/path/to/existing/SKILL.md
 ```
 
 `observe` requires a unique evidence ID for each execution; `--goal` and `--trigger` are required for a new pattern only, and a differing value on an existing one is refused with the stored wording. The CLI enforces three distinct evidence IDs, not semantic equivalence: **the agent must check** whether the executions truly share a procedure and whether evidence is genuine. `candidate` reads the draft from the drafts directory only (`--from` must point inside it; symlinks, hard links and files over 64 KiB are refused) and copies the approved bytes into the state directory. `match` is only a lightweight lexical shortlist. `close` records a completed promotion/merge; it does **not** create or validate the destination skill beyond checking that the target exists. User approval must actually be obtained in conversation before supplying `--approved` or `--approved-sha256`.

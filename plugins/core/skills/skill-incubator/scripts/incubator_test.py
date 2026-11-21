@@ -103,6 +103,8 @@ class IncubatorTest(unittest.TestCase):
         drafts.mkdir(mode=0o755)
         symlink = drafts / 'trial-one.md'
         symlink.symlink_to(outside)
+        before = (self.home / 'registry.json').read_bytes()
+        events = (self.home / 'events.jsonl').read_bytes()
         for args in (['--from', '/etc/hosts'], [], ['--from', str(drafts / 'trial-one.md')],
                      ['--from', str(drafts / '..' / 'registry.json')]):
             self.out.seek(0)
@@ -112,6 +114,8 @@ class IncubatorTest(unittest.TestCase):
             command = ['candidate', '--id', 'trial-one', *args, '--approved-sha256', 'irrelevant']
             self.assertEqual(self.cli(*command), 1)
             self.assertIn(f'procedure must be a regular file under {drafts}', self.err.getvalue())
+            self.assertEqual((self.home / 'registry.json').read_bytes(), before)
+            self.assertEqual((self.home / 'events.jsonl').read_bytes(), events)
         symlink.unlink()
         hardlink = drafts / 'trial-one.md'
         os.link(outside, hardlink)
@@ -130,6 +134,50 @@ class IncubatorTest(unittest.TestCase):
         self.err.truncate()
         self.assertEqual(self.cli('candidate', '--id', 'trial-one', '--approved-sha256', hashlib.sha256(large).hexdigest()), 1)
         self.assertIn('procedure larger than 64 KiB', self.err.getvalue())
+
+    def test_draft_of_exactly_64_kib_is_accepted(self):
+        self.observe()
+        content = b'x' * (64 * 1024)
+        code, _ = self.register(content=content, approved=hashlib.sha256(content).hexdigest())
+        self.assertEqual(code, 0, self.err.getvalue())
+
+    def test_unchanged_approval_keeps_dates_and_new_version_restarts_trial(self):
+        self.observe()
+        first = b'procedure\n'
+        self.assertEqual(self.register(content=first, approved=hashlib.sha256(first).hexdigest())[0], 0)
+        events = (self.home / 'events.jsonl').read_bytes()
+        later = date(2026, 12, 1)
+        with patch.object(incubator, 'today', return_value=later):
+            self.out.seek(0)
+            self.out.truncate()
+            self.assertEqual(self.register(content=first, approved=hashlib.sha256(first).hexdigest())[0], 0)
+            self.assertTrue(json.loads(self.out.getvalue())['unchanged'])
+            entry = self.read_registry()['entries']['trial-one']
+            self.assertEqual(entry['trial_started_at'], '2026-11-21')
+            self.assertEqual(entry['review_at'], '2026-11-28')
+            self.assertEqual((self.home / 'events.jsonl').read_bytes(), events)
+            second = b'procedure v2\n'
+            self.assertEqual(self.register(content=second, approved=hashlib.sha256(second).hexdigest())[0], 0)
+            entry = self.read_registry()['entries']['trial-one']
+            self.assertEqual(entry['trial_started_at'], '2026-12-01')
+            self.assertEqual(entry['review_at'], '2026-12-08')
+        data = self.read_registry()
+        data['entries']['trial-one'].pop('approved_sha256')
+        (self.home / 'registry.json').write_text(json.dumps(data))
+        legacy = date(2026, 12, 5)
+        with patch.object(incubator, 'today', return_value=legacy):
+            self.assertEqual(self.register(content=second, approved=hashlib.sha256(second).hexdigest())[0], 0)
+        entry = self.read_registry()['entries']['trial-one']
+        self.assertEqual(entry['trial_started_at'], '2026-12-05')
+        self.assertEqual(entry['review_at'], '2026-12-12')
+
+    def test_malformed_entry_and_non_utf8_registry_are_unsupported(self):
+        for raw in (json.dumps({'version': 1, 'entries': {'x': {}}}).encode(), b'\xff'):
+            (self.home / 'registry.json').write_bytes(raw)
+            self.err.seek(0)
+            self.err.truncate()
+            self.assertEqual(self.cli('list'), 1)
+            self.assertIn('unsupported registry format', self.err.getvalue())
 
     def test_draft_path_creates_directory_and_prints_absolute_path(self):
         self.assertEqual(self.cli('draft-path', '--id', 'trial-one'), 0)
@@ -201,6 +249,7 @@ class IncubatorTest(unittest.TestCase):
         self.assertEqual(lines[0], incubator.TRIGGERS_HEADER)
         self.assertEqual(lines[1], 'alpha: line break')
         self.assertEqual(lines[2], 'beta: ' + 'z' * 300 + '…')
+        self.assertEqual(len(lines), 3)
 
     def test_drafts_symlink_is_rejected(self):
         self.observe()

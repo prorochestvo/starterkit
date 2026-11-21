@@ -25,6 +25,11 @@ INCUBATOR_HOME_ENV = 'INCUBATOR_HOME'
 MIN_OBSERVATIONS = 3
 # First review of a new trial; the skill's 30-day step follows it.
 REVIEW_AFTER_DAYS = 7
+# The promote / merge / extend / archive decision of a trial.
+DECISION_AFTER_DAYS = 30
+# Characters a trigger line must not carry into session context: control, format
+# (bidi, zero-width), and line or paragraph separators.
+UNPRINTABLE = ('Cc', 'Cf', 'Zl', 'Zp')
 MAX_PROCEDURE_BYTES = 64 * 1024
 
 
@@ -76,13 +81,12 @@ def read_draft(cid, from_file=''):
     error = f'procedure must be a regular file under {drafts}'
     try:
         require(path.resolve().parent == drafts.resolve(), error)
-        fd = os.open(str(path), os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+        fd = os.open(str(path), os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0))
     except (OSError, RuntimeError):
         require(False, error)
     try:
         info = os.fstat(fd)
-        require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1,
-                f'procedure must be a regular file under {drafts}')
+        require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1, error)
         with os.fdopen(fd, 'rb') as stream:
             fd = -1
             content = stream.read(MAX_PROCEDURE_BYTES + 1)
@@ -97,6 +101,22 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def load_registry(path):
+    try:
+        data = json.loads(path.read_text(encoding='utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        require(False, 'unsupported registry format')
+    require(isinstance(data, dict) and data.get('version') == 1 and isinstance(data.get('entries'), dict) and
+            all(isinstance(e, dict) and isinstance(e.get('id'), str) and isinstance(e.get('status'), str)
+                for e in data['entries'].values()),
+            'unsupported registry format')
+    return data
+
+
+def trial_start(entry):
+    return date.fromisoformat(entry.get('trial_started_at') or entry['created_at'][:10])
+
+
 @contextlib.contextmanager
 def registry():
     root = home()
@@ -106,14 +126,7 @@ def registry():
         os.chmod(lock_path, 0o600)
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         path = root / 'registry.json'
-        try:
-            data = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {'version': 1, 'entries': {}}
-        except json.JSONDecodeError:
-            require(False, 'unsupported registry format')
-        require(isinstance(data, dict) and data.get('version') == 1 and
-                isinstance(data.get('entries'), dict) and
-                all(isinstance(entry, dict) for entry in data['entries'].values()),
-                'unsupported registry format')
+        data = load_registry(path) if path.exists() else {'version': 1, 'entries': {}}
         yield data
         fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
 
@@ -227,8 +240,9 @@ def run(args):
         content = procedure_path(args.id).read_bytes()
         require(e.get('approved_sha256') and digest(content) == e['approved_sha256'],
                 'procedure differs from the approved version; re-approve with candidate --approved-sha256')
+        text = content.decode('utf-8')
         print(f"# Candidate: {args.id}\n# SHA256: {digest(content)}\n# Scope: {e['scope']}\n# Trigger: {e['trigger']}\n")
-        print(content.decode('utf-8'))
+        print(text)
 
 
 def record(args):
@@ -256,10 +270,9 @@ def review(args):
         for entry in sorted(data['entries'].values(), key=lambda e: e['id']):
             if entry['status'] != 'trial' or (not args.all and entry.get('review_at', '') > current.isoformat()):
                 continue
-            started = date.fromisoformat(entry.get('trial_started_at') or entry['created_at'][:10])
-            age_days = (current - started).days
+            age_days = (current - trial_start(entry)).days
             entries.append(dict(entry, age_days=age_days,
-                                stage='first' if age_days < 30 else 'decision'))
+                                stage='first' if age_days < DECISION_AFTER_DAYS else 'decision'))
         emit(entries)
 
 
@@ -274,9 +287,8 @@ def extend(args):
         if args.days is not None:
             review_at = current + timedelta(days=args.days)
         else:
-            started = date.fromisoformat(entry.get('trial_started_at') or entry['created_at'][:10])
-            first_review = started + timedelta(days=30)
-            review_at = first_review if first_review > current else current + timedelta(days=30)
+            first_review = trial_start(entry) + timedelta(days=DECISION_AFTER_DAYS)
+            review_at = first_review if first_review > current else current + timedelta(days=DECISION_AFTER_DAYS)
         review_at = review_at.isoformat()
         entry['review_at'] = review_at
         entry.setdefault('extensions', []).append({'at': timestamp(), 'reason': args.reason,
@@ -331,18 +343,13 @@ def triggers(_args):
     if not path.exists():
         return
     try:
-        data = json.loads(path.read_text(encoding='utf-8'))
-        require(isinstance(data, dict) and data.get('version') == 1 and
-                isinstance(data.get('entries'), dict) and
-                all(isinstance(entry, dict) for entry in data['entries'].values()),
-                'unsupported registry format')
-        entries = data['entries']
-        selected = [e for e in entries.values()
-                    if e.get('status') == 'trial' and e.get('approved_sha256')]
+        selected = [e for e in load_registry(path)['entries'].values()
+                    if e['status'] == 'trial' and e.get('approved_sha256')]
         lines = []
-        for e in sorted(selected, key=lambda entry: str(entry.get('id'))):
-            trigger = ''.join(' ' if unicodedata.category(char) == 'Cc' else char for char in str(e.get('trigger', '')))
-            lines.append(f"{e.get('id')}: {trigger[:300]}{'…' if len(trigger) > 300 else ''}")
+        for e in sorted(selected, key=lambda entry: entry['id']):
+            trigger = ''.join(' ' if unicodedata.category(char) in UNPRINTABLE else char
+                              for char in str(e.get('trigger', '')))
+            lines.append(f"{e['id']}: {trigger[:300]}{'…' if len(trigger) > 300 else ''}")
         if lines:
             print('\n'.join([TRIGGERS_HEADER] + lines))
     except (ValueError, OSError, UnicodeError, json.JSONDecodeError) as exc:
