@@ -75,7 +75,8 @@ interleave new owner requests with the running pipeline.
 A stage waits for its own work inside its turn: watch a CI run with `gh run watch`, and
 start a long gate with its output in a log, then poll that log or PID; each call runs under
 a bounded Bash timeout and repeats until the result is in. A stage never ends its turn while
-a process it started still runs.
+a process or subagent it started still runs; it hands back only when its task is done or
+blocked on someone else.
 A stage that still reports waiting on background work names a handle: a PID, job id, or
 log path. A claim without a handle is not started; send the stage back at once. Check the
 handle when the claim arrives and again each time the stage has been silent for 15 minutes,
