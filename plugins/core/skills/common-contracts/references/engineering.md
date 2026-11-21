@@ -6,6 +6,19 @@
 `scripts/` holds repeatable operational scripts. Neither is a home for
 Go source or spent one-off migration artifacts.
 
+## Dependencies
+
+### No new dependency or dependency-update bot unless the user asks (R52)
+
+Do not add a library, module, or package to a manifest (`go.mod`,
+`pubspec.yaml`, `package.json`, and the like), and do not add
+Dependabot, Renovate, or another automated dependency-update
+configuration, unless the user asks for it or an agreed plan names it.
+When a repository already carries such a configuration, propose
+removing it rather than asking whether to keep it. Build on the
+standard library and what the repository already depends on; when only
+a new dependency would do, propose it and wait.
+
 ## Correctness and verification
 
 ### Unit-sensitive tests require divergent fixtures (R25)

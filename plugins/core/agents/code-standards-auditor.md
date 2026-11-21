@@ -46,7 +46,7 @@ justified exception, say so explicitly rather than asserting.
 
 ## The checklist
 
-The rules are **not** inline in this file. All 51 live in eight reference files, so they
+The rules are **not** inline in this file. All 52 live in eight reference files, so they
 also load while code is being written instead of lying dormant until someone asks for an
 audit. This agent is the aggregate gate over them.
 
@@ -59,7 +59,7 @@ coverage that never happened.
 |---|---|---|
 | `common-contracts/references/go-engineering.md` | R1–R3, R8–R14, R24, R34, R38, R43, R44, R48, R49 (17) | interface assertions in tests, consumer-local minimal interfaces, domain types, reuse over hand-rolled code, no pass-through indirection or trivial helpers, inline fixtures, naming, layering, shared configuration packages that hold only data, application tests on in-memory doubles |
 | `common-contracts/references/go-layout.md` | R16–R20, R23, R31, R39, R41, R46, R47, R50 (12) | file declaration order, one type per declaration, call-argument layout, explicit subtests instead of case tables, composition roots, the root constants package, versioned packages, transport split, service `main`, test files mirroring production |
-| `common-contracts/references/engineering.md` | R25–R29, R33, R40 (7) | unit-sensitive fixtures, proportionate guards, configurable limits, sentinel-zero seams, caches that stamp failure, `pipefail` against an early-exiting last stage, `configs/` and `scripts/` |
+| `common-contracts/references/engineering.md` | R25–R29, R33, R40, R52 (8) | unit-sensitive fixtures, proportionate guards, configurable limits, sentinel-zero seams, caches that stamp failure, `pipefail` against an early-exiting last stage, `configs/` and `scripts/`, no unrequested dependency or dependency-update bot |
 | `common-contracts/references/src-configuration.md` | R4–R7, R42, R51 (6) | env var names as constants, `dsninjector.DataSource` constructors, fail-fast startup config, injected branding, non-secret settings from the service config file, complete shipped settings files |
 | `common-contracts/references/security.md` | R15, R22 (2) | secrets never printed, total redaction on every rendering path |
 | `common-contracts/references/documentation.md` | R21, R35 (2) | the `AGENTS.md`/skill split, comments that do not credit a check the code omits |
@@ -71,7 +71,7 @@ the `skills/` sibling of the directory that holds `model-id`. Resolve it once be
 `python3 -I -c 'import os,shutil;print(os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(shutil.which("model-id"))),"..","skills")))'`.
 Rules are written as a heading carrying the `R#` plus a short body; there is no separate
 detect line, so derive the check from the body and still verify every finding in the code.
-Numbering runs R1–R51 with no gaps and no duplicates.
+Numbering runs R1–R52 with no gaps and no duplicates.
 
 ## Audit procedure
 
@@ -125,7 +125,7 @@ R7, R11 — no violations in scope.
 work, and some rules are Go-bound *by mechanism* rather than by principle. The test: does the
 rule's **detect** step reference Go syntax or Go tooling? If yes, it does not apply to a repo in
 another language — as of 2026-10-21 that is R1, R2, R5, R11, R12, R16, R17, R28, R39, R41, R44,
-R46, R47, R49 and R50, whose requirement is itself a Go idiom. The other thirty-six are design and
+R46, R47, R49 and R50, whose requirement is itself a Go idiom. The other thirty-seven are design and
 operations rules that hold in any language: naming, layering, fail-fast config, secret redaction,
 proportionate guards, configurable limits, cache-stamps-failure, hazard sweeping, honest proofs
 and comments, directory discipline. Some of those — R36, R40, R42, R43, R48 — carry a Go-shaped

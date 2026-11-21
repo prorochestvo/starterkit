@@ -1,6 +1,6 @@
 ---
 name: common-contracts
-description: Apply reusable engineering and operating contracts selectively based on the task, affected component, programming language, and deployment environment. Covers Go code (types, interfaces, packages, layout, tests), services, configuration and secrets, health checks (/ping and /health/check), Linux releases and deployment, documentation (README, docs, specs, comments, AGENTS.md), and owner-only actions (password, sudo, login, protected action, credential).
+description: Apply reusable engineering and operating contracts selectively based on the task, affected component, programming language, and deployment environment. Covers Go code (types, interfaces, packages, layout, tests), new dependencies and dependency-update bots, services, configuration and secrets, health checks (/ping and /health/check), Linux releases and deployment, documentation (README, docs, specs, comments, AGENTS.md), and owner-only actions (password, sudo, login, protected action, credential).
 ---
 
 # Common contracts
@@ -18,7 +18,7 @@ Contract filenames follow `[<type>-][<language>-]<subject>.md`. `src` means serv
 | General | `references/security.md` | Handling secrets, credentials, redaction, or sensitive output |
 | General | `references/documentation.md` | Writing or reviewing README files, `docs/`, specs under `.agents/specs/`, `AGENTS.md`, or code comments |
 | General | `references/operator-actions.md` | Owner-only actions: a password, sudo, a login, a protected action, a credential, or anything else the agent genuinely cannot perform |
-| General | `references/engineering.md` | Writing or reviewing operational limits, correctness guards, or shell pipelines |
+| General | `references/engineering.md` | Writing or reviewing operational limits, correctness guards, or shell pipelines; adding a dependency; adding or reviewing dependency-update bot configurations (R52) |
 | Application · Dart | `references/app-dart-comments.md` | Writing Dart comments |
 | Go | `references/go-engineering.md` | Designing Go types, interfaces, packages, abstractions, dependencies, or tests |
 | Go | `references/go-layout.md` | Organizing Go files, tests, composition roots, or transport layers; formatting call arguments |

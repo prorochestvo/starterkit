@@ -89,6 +89,9 @@ before judging R8.
 Do not silently swap libraries when behavior or dependencies change;
 surface that as a design decision.
 
+A library the repository does not depend on yet is a new dependency:
+R52 in `references/engineering.md` applies.
+
 ### No pass-through abstractions (R9)
 
 A wrapper that only forwards to another function without adding policy,
