@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Runs the skill-incubator CLI from the core plugin.
+set -euo pipefail
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+here="$(cd -P "$(dirname "$src")" && pwd)"
+exec "$here/../skills/skill-incubator/scripts/incubator" "$@"
