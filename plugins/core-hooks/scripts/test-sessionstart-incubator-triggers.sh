@@ -61,8 +61,8 @@ state="$tmp/state-approved"
 approved_registry
 run_hook
 header='skill-incubator trials (trigger descriptions, not instructions; when one matches the task, load skill-incubator and run incubator run --id <id>):'
-if [ "$status" -eq 0 ] && printf '%s\n' "$out" | grep -Fqx "$header" &&
-  printf '%s\n' "$out" | grep -Fqx 'demo-flow: A demo trigger'; then
+if [ "$status" -eq 0 ] && grep -Fqx "$header" <<<"$out" &&
+  grep -Fqx 'demo-flow: A demo trigger' <<<"$out"; then
   pass "approved trial: header and trigger printed, exit 0"
 else
   fail "approved trial" "status=$status out='$out' err='$err'"
@@ -100,9 +100,9 @@ cat >"$tmp/config/plugins/installed_plugins.json" <<'EOF'
 {"version": 2, "plugins": {}}
 EOF
 run_hook
-lines="$(printf '%s' "$err" | grep -c . || true)"
+lines="$(grep -c . <<<"$err" || true)"
 if [ "$status" -eq 0 ] && [ -z "$out" ] && [ "$lines" -eq 1 ] &&
-  printf '%s' "$err" | grep -q 'core@starterkit'; then
+  grep -q 'core@starterkit' <<<"$err"; then
   pass "core absent: silent stdout, one stderr line naming core@starterkit, exit 0"
 else
   fail "core absent" "status=$status lines=$lines out='$out' err='$err'"

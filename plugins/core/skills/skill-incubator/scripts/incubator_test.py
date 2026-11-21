@@ -18,7 +18,7 @@ class IncubatorTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
-        self.env = patch.dict(os.environ, {'INCUBATOR_HOME': str(self.home)})
+        self.env = patch.dict(os.environ, {incubator.INCUBATOR_HOME_ENV: str(self.home)})
         self.env.start()
         self.addCleanup(self.env.stop)
         self.clock = patch.object(incubator, 'today', return_value=date(2026, 11, 21))
@@ -263,7 +263,7 @@ class IncubatorTest(unittest.TestCase):
 
     def test_triggers_missing_state_and_corrupt_registry(self):
         self.home = self.home / 'state'
-        os.environ['INCUBATOR_HOME'] = str(self.home)
+        os.environ[incubator.INCUBATOR_HOME_ENV] = str(self.home)
         self.assertEqual(self.cli('triggers'), 0)
         self.assertEqual(self.out.getvalue(), '')
         self.assertFalse(self.home.exists())

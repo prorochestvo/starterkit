@@ -31,6 +31,8 @@ DECISION_AFTER_DAYS = 30
 # (bidi, zero-width), and line or paragraph separators.
 UNPRINTABLE = ('Cc', 'Cf', 'Zl', 'Zp')
 MAX_PROCEDURE_BYTES = 64 * 1024
+# Longest trigger text one triggers line carries.
+MAX_TRIGGER_CHARS = 300
 
 
 def today():
@@ -64,12 +66,8 @@ def procedure_path(cid):
     return home() / 'candidates' / cid / 'procedure.md'
 
 
-def drafts_path():
-    return home() / 'drafts'
-
-
 def prepare_drafts():
-    path = drafts_path()
+    path = home() / 'drafts'
     path.mkdir(mode=0o700, parents=True, exist_ok=True)
     require(stat.S_ISDIR(path.lstat().st_mode), 'drafts must be a real directory')
     return path
@@ -90,7 +88,7 @@ def read_draft(cid, from_file=''):
         with os.fdopen(fd, 'rb') as stream:
             fd = -1
             content = stream.read(MAX_PROCEDURE_BYTES + 1)
-        require(len(content) <= MAX_PROCEDURE_BYTES, 'procedure larger than 64 KiB')
+        require(len(content) <= MAX_PROCEDURE_BYTES, f'procedure larger than {MAX_PROCEDURE_BYTES // 1024} KiB')
         return content
     finally:
         if fd >= 0:
@@ -111,6 +109,10 @@ def load_registry(path):
                 for e in data['entries'].values()),
             'unsupported registry format')
     return data
+
+
+def printable(text):
+    return ''.join(' ' if unicodedata.category(char) in UNPRINTABLE else char for char in str(text))
 
 
 def trial_start(entry):
@@ -241,7 +243,7 @@ def run(args):
         require(e.get('approved_sha256') and digest(content) == e['approved_sha256'],
                 'procedure differs from the approved version; re-approve with candidate --approved-sha256')
         text = content.decode('utf-8')
-        print(f"# Candidate: {args.id}\n# SHA256: {digest(content)}\n# Scope: {e['scope']}\n# Trigger: {e['trigger']}\n")
+        print(f"# Candidate: {args.id}\n# SHA256: {digest(content)}\n# Scope: {e['scope']}\n# Trigger: {printable(e['trigger'])}\n")
         print(text)
 
 
@@ -287,8 +289,8 @@ def extend(args):
         if args.days is not None:
             review_at = current + timedelta(days=args.days)
         else:
-            first_review = trial_start(entry) + timedelta(days=DECISION_AFTER_DAYS)
-            review_at = first_review if first_review > current else current + timedelta(days=DECISION_AFTER_DAYS)
+            decision_at = trial_start(entry) + timedelta(days=DECISION_AFTER_DAYS)
+            review_at = decision_at if decision_at > current else current + timedelta(days=DECISION_AFTER_DAYS)
         review_at = review_at.isoformat()
         entry['review_at'] = review_at
         entry.setdefault('extensions', []).append({'at': timestamp(), 'reason': args.reason,
@@ -347,9 +349,9 @@ def triggers(_args):
                     if e['status'] == 'trial' and e.get('approved_sha256')]
         lines = []
         for e in sorted(selected, key=lambda entry: entry['id']):
-            trigger = ''.join(' ' if unicodedata.category(char) in UNPRINTABLE else char
-                              for char in str(e.get('trigger', '')))
-            lines.append(f"{e['id']}: {trigger[:300]}{'…' if len(trigger) > 300 else ''}")
+            trigger = printable(e.get('trigger', ''))
+            cut = '…' if len(trigger) > MAX_TRIGGER_CHARS else ''
+            lines.append(f"{e['id']}: {trigger[:MAX_TRIGGER_CHARS]}{cut}")
         if lines:
             print('\n'.join([TRIGGERS_HEADER] + lines))
     except (ValueError, OSError, UnicodeError, json.JSONDecodeError) as exc:
