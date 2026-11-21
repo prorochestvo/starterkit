@@ -43,6 +43,10 @@ The gate is `verification` per the glossary: `make verify` (linters, static anal
 
 The same applies to `make test` and `make deploy`: a missing target is reported with a proposal, not replaced by an ad-hoc command.
 
+## Scratch files
+
+Write temporary files (commit messages, prompts, Codex or reviewer output) only in your own subdirectory of the session scratchpad. Create it once at the start of the task with `mktemp -d "$SCRATCHPAD/<project>-<task>-XXXXXXXX"` and write the path it prints literally in every later command: a shell variable does not survive into the next Bash call. Never write a file at the scratchpad root: parallel agents of one session share it and overwrite each other's files.
+
 ## Reporting
 
 One report at the end of the sequence: what changed, the gate's result (or that no gate exists and what was run instead), the review outcome, the commits and the push, backlog entries filed, and any proposal (gate target, follow-ups). Steps only the owner can run are handed over as one runnable command (`common-contracts`, owner-only actions), never as a prose blocker list.

@@ -9,6 +9,7 @@ nor the project templates enable `core-hooks`.
 
 | Hook | Event | What it does |
 |------|-------|--------------|
+| `sessionstart-incubator-triggers.sh` | `SessionStart` (timeout 5 s) | Prints the approved skill-incubator trials, one line per trial, and nothing when there are none. Sends nothing outside the session. |
 | `review-commit-msg.sh` | `PreToolUse` `Bash`, on `git commit` (timeout 150 s) | Reviews the commit message against the commit conventions when the commit lands on an integration branch (`main`, `stage`, `prod`, `dev`). A rejected message blocks the commit and the reasons go back to the agent; a reviewer failure lets the commit through. Commits on other branches are not reviewed. |
 | `question-quorum.py` | `PreToolUse` `AskUserQuestion` (timeout 180 s) | Before a multiple-choice question reaches you, a panel of external models answers it. When the panel agrees on every question in the batch, the question is not shown and the agreed answers are applied without asking you. Any disagreement, or a question the panel cannot answer, reaches you unchanged. |
 | `userprompt-remark-marker.py` | `UserPromptSubmit` (timeout 5 s) | When a prompt starts with `~wtf` or `~ok`, adds an instruction to load the `skill-tuner` skill. Sends nothing outside the session. |
@@ -28,7 +29,8 @@ the hook's `PATH`. When `core` is not installed, the hook prints one line naming
 When the user `settings.json` in the same configuration directory already registers a hook
 command that names a file with the same base name (for example a copy of
 `review-commit-msg.sh` wired in the user settings), `with-core.sh` exits without running the
-plugin's copy, so the hook does not run twice. `scripts/test-with-core.sh` tests these cases.
+plugin's copy, so the hook does not run twice. `scripts/test-with-core.sh` tests these cases;
+`scripts/test-sessionstart-incubator-triggers.sh` tests the session-start trigger list.
 
 ## Disabling
 

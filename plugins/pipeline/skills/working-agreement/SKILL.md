@@ -75,7 +75,8 @@ interleave new owner requests with the running pipeline.
 A stage waits for its own work inside its turn: watch a CI run with `gh run watch`, and
 start a long gate with its output in a log, then poll that log or PID; each call runs under
 a bounded Bash timeout and repeats until the result is in. A stage never ends its turn while
-a process it started still runs.
+a process or subagent it started still runs; it hands back only when its task is done or
+blocked on someone else.
 A stage that still reports waiting on background work names a handle: a PID, job id, or
 log path. A claim without a handle is not started; send the stage back at once. Check the
 handle when the claim arrives and again each time the stage has been silent for 15 minutes,
@@ -86,9 +87,10 @@ watchers touch a heartbeat file every minute and name it in their handle; a hear
 than 5 minutes counts as a dead watcher.
 
 Each stage hands back once per run. Act on a coordinator message as it says — by default,
-continue the work; never resend a report already handed back. Put scratch files in the session
-scratchpad, never inside a repository worktree. Report a denied action in the hand-back as
-left over; never pass it to the coordinator or another agent to run.
+continue the work; never resend a report already handed back. Put scratch files in your own
+subdirectory of the session scratchpad (`workflow`, Scratch files), never inside a repository
+worktree. Report a denied action in the hand-back as left over; never pass it to the coordinator
+or another agent to run.
 
 Context hygiene: auto-compact triggers at 50% of the context window
 (`autoCompactWindow` in the global settings). Past that line, start no new
