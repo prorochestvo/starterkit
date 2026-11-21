@@ -86,9 +86,10 @@ watchers touch a heartbeat file every minute and name it in their handle; a hear
 than 5 minutes counts as a dead watcher.
 
 Each stage hands back once per run. Act on a coordinator message as it says — by default,
-continue the work; never resend a report already handed back. Put scratch files in the session
-scratchpad, never inside a repository worktree. Report a denied action in the hand-back as
-left over; never pass it to the coordinator or another agent to run.
+continue the work; never resend a report already handed back. Put scratch files in your own
+subdirectory of the session scratchpad (`workflow`, Scratch files), never inside a repository
+worktree. Report a denied action in the hand-back as left over; never pass it to the coordinator
+or another agent to run.
 
 Context hygiene: auto-compact triggers at 50% of the context window
 (`autoCompactWindow` in the global settings). Past that line, start no new

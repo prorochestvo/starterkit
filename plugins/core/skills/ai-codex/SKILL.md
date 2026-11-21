@@ -21,11 +21,13 @@ one of its steps. `workflow/references/review.md` names the model and says when
 
 ```bash
 printf '%s' "CONTEXT" | codex exec --ephemeral --skip-git-repo-check -s read-only \
-  -m "$(model-id luna)" 'QUESTION' -o "$SCRATCHPAD/codex-out.txt" > "$SCRATCHPAD/codex-full.log" 2>&1
-cat "$SCRATCHPAD/codex-out.txt"
+  -m "$(model-id luna)" 'QUESTION' -o "<scratch>/codex-out.txt" > "<scratch>/codex-full.log" 2>&1
+cat "<scratch>/codex-out.txt"
 ```
 
 Bash timeout of at least 300000 ms.
+
+`<scratch>` is the literal path of your scratch subdirectory (`workflow`, Scratch files).
 
 - stdin works: piped input is appended as a `<stdin>` block. Bulky context
   there, the question as the argument.
