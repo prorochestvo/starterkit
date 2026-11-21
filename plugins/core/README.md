@@ -14,7 +14,7 @@ calls into it.
 | Kind | Items |
 |------|-------|
 | Skills | `task-management`, `workflow`, `writing-instructions`, `cli-git`, `cli-github`, `common-contracts`, `skill-tuner`, `skill-incubator`, `ai-claude`, `ai-codex`, `ai-gemini`, `cli-openrouter`, `cli-cloudflare` |
-| Helpers (`bin/`, on the Bash tool's `PATH` while the plugin is enabled) | `model-id`, `second-opinion.sh`, `codex-limits.py`, `plan-name.sh`, `backlog-triage.sh`, `openrouter-cli` |
+| Helpers (`bin/`, on the Bash tool's `PATH` while the plugin is enabled) | `model-id`, `second-opinion.sh`, `codex-limits.py`, `plan-name.sh`, `backlog-triage.sh`, `openrouter-cli`, `incubator` (the skill-incubator CLI wrapper) |
 | Agents | `code-standards-auditor` |
 
 Skills are listed as `core:<name>`. Instructions in this and the other starterkit plugins
