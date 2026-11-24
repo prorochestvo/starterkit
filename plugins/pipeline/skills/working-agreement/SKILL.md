@@ -214,7 +214,18 @@ the marker that the repo runs the pipeline at all.
 ## Branching, the standard model
 
 `dev` is the integration branch: merge into it, collect commits on it, and
-cut `dev`/`alpha` tags from it without asking the owner. Beyond that there
-are no branch ceremonies — keep history linear (it reads better), and land
-one commit per task/plan. Release lines, protected branches, and anything
-outward-facing follow the global commit rules, not this section.
+cut `dev`/`alpha` tags from it without asking the owner. Beyond that there are
+no branch ceremonies; follow `cli-git` (`references/branches.md`) for history
+and landing mechanics. Release lines, protected branches, and anything
+outward-facing follow the global commit rules, not this section. When the
+coordinator fans out several small changes for `dev`, collect them on one work
+branch cut from `dev` and open one pull request into `dev`, so CI runs once:
+each agent's own branch lands on that work branch as one squash commit,
+changes to the same file go to one agent, and the squash into `dev` may
+combine those changes, overriding one commit per plan (step 4) and the
+atomic-commit rule in `cli-git` (`references/commits.md`). Give a change its
+own pull request into `dev` when it blocks other work or needs its own review.
+Landing on `dev` is the session's job — merging into `dev`, and the
+rebases and force-pushes that `cli-git` exempts from approval
+(`references/push.md`, `references/branches.md`); never list them as waiting
+for the owner.
