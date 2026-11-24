@@ -121,7 +121,10 @@ task first, then tune, then log. Everything below happens in the same turn.
    block as needed until it does; ask for replacement text for that whole block. Run:
    `codex exec --ephemeral --skip-git-repo-check --ignore-user-config -s read-only
    -m "$(model-id luna)" -o <out> "<prompt>" </dev/null`, with the target file, the old
-   block, and the `writing-instructions` rules in the prompt. Splice `luna`'s text into a
+   block, and the `writing-instructions` rules in the prompt; order `luna` to return the
+   block byte-identical except for the named lines, with no re-wrapping, re-tagging, or
+   reformatting. Codex `-o` drops the final newline of every output; restore it before
+   splicing as a transport fix, not an edit of `luna`'s text. Splice `luna`'s text into a
    copy of the file byte for byte — no re-wrapping, no normalisation — and keep the final
    newline. Build the diff yourself with `git diff --no-index <current file>
    <spliced file>` — `luna` writes broken hunk headers, so it never writes the diff. Check
