@@ -21,9 +21,9 @@ Project `CLAUDE.md`/`AGENTS.md` overrides anything here. In a project that runs 
   }
   ```
 - Clean a value inside the `Option` pipeline that produces it (`.map(_.trim)`, `.filter(_.nonEmpty)`, `.orElse(...)`); do not test the result afterwards with `if` to pick a fallback.
-- Use eta-reduction: `.flatMap(messageOf)`, not `.flatMap(x => messageOf(x))`.
+- Use eta-reduction: `.map(describe)`, not `.map(x => describe(x))`.
 - Write a single-expression lambda with parentheses: `.catchAll(e => ...)`; use braces only for a multi-statement lambda.
-- Sequence two or more ZIO effects in a for-comprehension, not a `flatMap(...).map(...)` chain; `Option` clean-up stays a pipeline.
+- Prefer a for-comprehension, `map`/`collect`, pattern matching, or the project's existing combinators over explicit `flatMap`, `flatten` and other flat methods (`flatTap`, `flatMapError` and the like) where an equivalent exists; sequence two or more ZIO effects in a for-comprehension, not a `flatMap(...).map(...)` chain; `Option` clean-up stays a pipeline.
 - Match on the type (`case r: Retry => r.attempts`), not on a positional extractor full of `_` (`case Retry(_, _, n, _) => n`).
 - Write `Nil`/`None` where the expected type is already known (a declared return type, parameter or field), not `List.empty[(String, String)]`.
 - Call a case class without `new`.
