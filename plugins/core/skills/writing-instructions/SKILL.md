@@ -31,9 +31,13 @@ compressing existing instruction files). Both follow the rules below.
   the exceptions the code does not show. Do not add a check, test, or lint that compares
   instruction text with code: if an instruction must change whenever the code changes, it
   is a copy.
-- **One rule, one place.** Before adding a rule, search the skills, `common-contracts`,
-  and the relevant `AGENTS.md` for one that covers it; sharpen that line instead of adding
-  a second. Elsewhere, link to it — never copy it.
+- **One rule, one place.** Before adding or moving a rule, search the skills,
+  `common-contracts`, and the relevant `AGENTS.md`; sharpen the covering line instead of
+  adding a second, and elsewhere link to it — never copy it. When a rule lands in a
+  skill, replace its other copies with a link; when editing an `AGENTS.md`, check each
+  added or kept line against the skills and replace the ones a skill already states with
+  a link. Where this change may not edit the file holding the copy (Who may change what),
+  propose the replacement instead.
 - **Why only when it prevents a wrong call.** Give the reason when an agent without it
   would "simplify" the rule away; otherwise leave it out. Decision history goes to plans,
   ADRs, or commit bodies.
