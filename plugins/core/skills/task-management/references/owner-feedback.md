@@ -24,6 +24,10 @@ it is not generated or named by an agent.
   `.agents/plans/` matching `owner-feedback-YYYYMMDD.*` or the earlier `review-YYYYMMDD.*`.
 - While any such review remains open, do not start other new tasks, regardless
   of their priority. Completing the owner feedback takes precedence.
+- When every remaining item is blocked on another plan, another repository, or an
+  owner decision, keep those items open and tracked, and start other new tasks in
+  parallel without asking the owner. Choose the order and parallelism. Resume blocked
+  items as soon as their blockers clear.
 - Work already in progress when the review was opened may continue; do not
   interpret this exception as permission to start additional tasks.
 - The owner may explicitly authorize a specific new task despite this gate.
